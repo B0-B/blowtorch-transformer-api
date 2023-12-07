@@ -1,0 +1,8 @@
+# Ignore all files of type bin, GGML, GGUF, bin, and all other weight formats
+*.[bB][iI][nN]
+*.[gG][gG][mM][lL]
+*.[gG][gG][uU][fF]
+*.[wW][eE][iI][gG][hH][tT]
+
+# discard Llama2 cpu binaries
+llama-build/*
