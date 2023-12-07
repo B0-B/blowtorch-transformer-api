@@ -97,8 +97,8 @@ class flashModel:
 
             try:
 
-                inputs = input('Human:')
-                print(self.name + ':', self.inference(inputs, **pipe_kwargs))
+                inputs = input('Human: ')
+                print('\n' + self.name + ':', self.inference(inputs, **pipe_kwargs))
 
             except KeyboardInterrupt:
                 
@@ -147,7 +147,6 @@ class flashModel:
 
 if __name__ == '__main__':
 
-    # flashModel('llama-2-7b-chat.Q2_K.gguf', 'TheBloke/Llama-2-7B-Chat-GGUF', 'cpu', model_type="llama").cli()
-    # flashModel('llama-2-7b-chat.Q2_K.gguf', 'TheBloke/Llama-2-7B-Chat-GGUF', 'cpu', model_type="llama")
-    flashModel(hugging_face_path='TheBloke/Llama-2-7B-Chat-GGML', device='cpu', model_type="llama").cli(max_new_tokens=64, do_sample=True, temperature=0.8, repetition_penalty=1.1)
+    flashModel('llama-2-7b-chat.Q2_K.gguf', 'TheBloke/Llama-2-7B-Chat-GGUF', 'cpu', model_type="llama").cli(max_new_tokens=64, do_sample=True, temperature=0.8, repetition_penalty=1.1)
+    # flashModel(hugging_face_path='TheBloke/Llama-2-7B-Chat-GGML', device='cpu', model_type="llama").cli(max_new_tokens=64, do_sample=True, temperature=0.8, repetition_penalty=1.1)
     # flashModel(device='cpu').cli() # run small palmyra model for testing
