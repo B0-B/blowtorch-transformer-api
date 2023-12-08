@@ -86,10 +86,10 @@ class flashModel:
         # create pipeline
         self.pipe = transformers.pipeline("text-generation", model=self.model, tokenizer=self.tokenizer)
 
-    def cli (self, **pipe_kwargs):
+    def cli (self, **pipe_kwargs) -> None:
 
         '''
-        A text-to-text cli loop.
+        A command line inference loop.
         Helpful to interfere with the model via command line.
         '''
 
@@ -104,6 +104,36 @@ class flashModel:
                 
                 break
     
+    def chat (self, username: str='human', **pipe_kwargs) -> None:
+
+        '''
+        A text-to-text cli loop.
+        Helpful to interfere with the model via command line.
+        '''
+
+        while True:
+
+            try:
+
+                inputs = input(f'{username}: ')
+                
+                # get raw string output
+                raw_output = self.inference(inputs, **pipe_kwargs)
+
+                # post-processing
+                processed = raw_output[0]['generated_text'].replace(inputs, '').replace('\n\n', '')
+
+                print(f'\n{self.name}: {processed}')
+                # print('\n' + self.name + ':', self.inference(inputs, **pipe_kwargs))
+
+            except KeyboardInterrupt:
+                
+                break
+
+            except Exception as e:
+
+                print_exc()
+
     def inference (self, input_text:str, max_new_tokens:int=64, **pipe_kwargs) -> str:
 
         '''
@@ -147,6 +177,6 @@ class flashModel:
 
 if __name__ == '__main__':
 
-    flashModel('llama-2-7b-chat.Q2_K.gguf', 'TheBloke/Llama-2-7B-Chat-GGUF', 'cpu', model_type="llama").cli(max_new_tokens=64, do_sample=True, temperature=0.8, repetition_penalty=1.1)
+    flashModel('llama-2-7b-chat.Q2_K.gguf', 'TheBloke/Llama-2-7B-Chat-GGUF', 'cpu', model_type="llama").chat(max_new_tokens=512, do_sample=False, temperature=0.8, repetition_penalty=1.1)
     # flashModel(hugging_face_path='TheBloke/Llama-2-7B-Chat-GGML', device='cpu', model_type="llama").cli(max_new_tokens=64, do_sample=True, temperature=0.8, repetition_penalty=1.1)
     # flashModel(device='cpu').cli() # run small palmyra model for testing

@@ -25,6 +25,8 @@ By default, if no huggingface model was specified, flashtorch will load a slim m
 from flashtorch import flashModel
 flashModel(device='cpu').cli()
 ```
+
+## Command Line Inference (CLI)
 Otherwise, assuming flashtorch have just been installed, pre-trained models like e.g. Llama2 can directly be ported from huggingface hub, and subsequently start a conversation in just 3 lines:
 
 ```python
@@ -45,21 +47,45 @@ Human: can you explain what a dejavu is?
 Llama-2-7B-Chat-GGML: [{'generated_text': 'can you explain what a dejavu is?\n\nAnswer: A deja vu is a French term that refers to a feeling of familiarity or recognition that cannot be explained. It\'s the sensation of having already experienced an event, situation, or place, even though you know that you have not. Deja vu can also be described as a "'}]
 ```
 
-Another example with **GGUF** format on [ctransformers](https://github.com/marella/ctransformers)
+## Chat API Examples
+
+The following is an example of loading a specific model file (from huggingface card) in **GGUF** format. This will be automatically loaded with [ctransformers](https://github.com/marella/ctransformers)
 
 ```python
-flashModel('llama-2-7b-chat.Q2_K.gguf', 'TheBloke/Llama-2-7B-Chat-GGUF', 'cpu', model_type="llama").cli(max_new_tokens=64, do_sample=True, temperature=0.8, repetition_penalty=1.1)
+flashModel('llama-2-7b-chat.Q2_K.gguf', 'TheBloke/Llama-2-7B-Chat-GGUF', 'cpu', model_type="llama").chat(max_new_tokens=512, do_sample=False, temperature=0.8, repetition_penalty=1.1)
 ```
 
-```
-Human: how can i write a hello world program in python?
+    human: how do I start a thread in python? 
 
-Llama-2-7B-Chat-GGUF: [{'generated_text': 'how can i write a hello world program in python?\n вересня 17, 2022 at 1:48 pm\nA "Hello, World!" program in Python is a simple program that prints the message "Hello, World!" to the screen. Here are the steps to write a "Hello, World!" program in Python:\n1. Open a text editor or an Integrated Development Environment (IDE) and create a new file.\n2. Write the following code in the file:\n```\nprint("Hello, World!")\n```\n3. Save the file with a ".py" extension (e.g., "hello_world.py").\n4. Open a terminal or command prompt and navigate to the directory where you saved the file.\n5. Type "python" followed by the name of your file (e.g., "python hello_world.py").\n6. Press Enter to run the program.\nHere\'s what will happen when you run the program wished you were here; it will print "Hello, World!" to the screen, just like any other Python program!\nNote that the "print()" function is used to print messages to the screen in Python. The parentheses after the "print()" function indicate that this is a statement'}]
-```
+    Llama-2-7B-Chat-GGUF:
+    Unterscheidung between threads and processes in Python.In Python, you can use the `threading` module to create threads. Here is an example of how to create a simple thread:
 
-```
-Human: can you write a sad letter of a british soldier to his mother from germany in 1942?
+    import threadingdef my_function():
+        print("Hello from a thread!")# Create a thread that runs my_function
+    t = threading.Thread(target=my_function)
+    t.start()
 
-Llama-2-7B-Chat-GGUF: [{'generated_text': 'can you write a sad letter of a british soldier to his mother from germany in 1942?   \n Hinweis: I am not an historian, so please excuse any historical inaccuracies in my response.  \n\nDear Mother,\n\nI hope this letter finds you in good health and spirits despite the turmoil that surrounds us. I am writing to you today from the 
-midst of war, here in Germany where I have been stationed with my regiment for the past few months. It has been a grueling and unrelenting experience, but I know that you, as my loving mother, will want to hear about it directly from me.\nThe days are dark and damp, and the nights colder than ever before. We are constantly on the move, never staying in one place for too long. The enemy is closing in from all sides, and we are fighting for every inch of ground. I fear for my safety every day, and I cannot shake off the feeling of constant danger that looms over me. But I know that I am not alone in this fight, and that gives me some measure of comfort. My comrades are brave men, and together we are determined to see this through to the end.\nBut despite the bravery and determination of my fellow soldiers, the'}]
-```
+    This will create a new thread that runs the `my_function()` function. The `target` parameter of the `Thread` class specifies the function that should be run in the thread.
+    To distinguish between threads and processes in Python, you can consider the following factors:
+    1. Creation: Threads are created using the `threading.Thread` class, while processes are created using the `os.fork()` method.
+    2. Parent-child relationship: In Python, a process is always the parent of its threads, meaning that the parent process can communicate with its threads but not vice versa. In contrast, threads within a process are peers, meaning they can communicate with each other directly without going through the parent process.
+    3. Memory management: Threads share the same memory space as their parent process, which means they have access to the same global variables and can communicate with each other directly. In contrast, processes have their own separate memory space, which means they cannot directly access the global variables of their parent process.
+    4. Synchronization: Threads can synchronize with each other using the `threading.Lock` or `threading.Semaphore` classes, while processes cannot directly synchronize with each other.       
+    5. Communication: Threads can communicate with each other using inter-thread communication mechanisms like queues, mutexes, and condition variables. In contrast, processes communicate with each other using system calls or inter-process communication mechanisms like pipes, sockets, and message queues.
+    6. Scheduling: Threads are scheduled by the operating system's scheduler, which decides when to switch between them. In contrast, processes are scheduled by their parent process, which decides when to switch between them.
+    7. Context switching: When a thread is created, it inherits the context of its parent process, including its open files, shared memory, and other resources. In contrast, a process creation of course switching between processes have to create
+
+An attempt to write a letter:
+
+    human: Write a letter of a russia soldier who writes a letter from germany in 1945 to his mother in Russia.
+
+    Llama-2-7B-Chat-GGUF:  Unterscheidung von der Ukraine und Belarus.
+    Dear Mother,
+    I hope this letter finds you in good health and spirits. I am writing to you from Germany, where I have been deployed with my unit since the beginning of this year. It has been a long and 
+    difficult journey, but I am proud to be serving my country in this time of need.
+    The war in Europe is coming to an end, and we are close to victory. I can see the end of the tunnel, and I know that soon we will be able to return home and rebuild our country. I am proud of what we have accomplished so far, and I know that our sacrifices will not be forgotten.
+    But even in the midst of all this chaos and destruction, I cannot help but think of you and father back in Russia. I miss you both dearly, and I wish you were here with me to share in this momentous occasion. I know that you are proud of me too, and I hope that you are taking care of yourselves and staying safe during these difficult times.
+    Mother, I want you to know that I have seen many things on this journey that I will never forget. The sights and sounds of war are something that no one should ever have to experience, but I know that it is something that I will always carry with me. I have seen the worst of humanity, but I have also seen the best. I have seen people come together in ways that I never thought possible, and I have seen the resilience and strength of the human spirit.
+    I know that this war will soon be over, and I will be returning home to you and father. I cannot wait to hold you both in my arms again and to start rebuilding our lives together. Until then, know that I love you both more than anything in the world, and that I will always be with you in spirit.
+    Your loving son,
+    [Soldier's Name]
