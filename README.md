@@ -16,7 +16,9 @@ Assumes drivers, opencl are installed and detects GPU via clinfo, rocminfo, nvid
 
 ## Dependencies
 
-    pip install transformers[torch] accelerate optimum h5py bitsandbytes
+    pip install transformers[torch] accelerate optimum[amd] h5py bitsandbytes
+
+optimum[amd] is used to install the Optimum package with the AMD accelerator.
 
 ## Usage
 By default, if no huggingface model was specified, flashtorch will load a slim model called [Writer/palmyra-small](https://huggingface.co/Writer/palmyra-small), which is good for pure testing:

@@ -3,6 +3,7 @@
 from os import system as shell
 
 shell('pip install transformers[torch] ctransformers accelerate optimum h5py')
+pip install --upgrade-strategy eager optimum[amd]
 # shell('pip install --upgrade-strategy eager optimum[neural-compressor]')
 
 # # tensorflow-intel dependecies
