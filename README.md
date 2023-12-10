@@ -141,23 +141,12 @@ flashModel('llama-2-7b-chat.Q2_K.gguf',
 ) `
 ```   
 
-    human: Hello, Arnold.
-    Arnold: Hello! How can I assist you today?
-    human: hey mate can you teach me biceps curls, I need to get in shape.
+    human: who are you?
+    Arnold: Oh, just me, the Terminator, the Governator, the man who will be back... (winks) (23.6s)
 
-    Arnold: *chuckles* Oh boy, you gotta be kiddin' me! Biceps curls? That's a piece of cake! *winks* Just do push-ups and squats, that'll get ya there! *winks*
 
-    human: But I heard you do curls?
-
-    Arnold: *laughs* Curls? Hahaha, kiddo! I may have had a few too many of those back in the day... but nowadays, I just stick to my after-dinner walks on the treadmill. *winks* You know, keep the old muscles limber! *chuckles* Oh boy, you gotta be kiddin' me! Biceps curls? That's a piece of cake! *winks* Just do push-ups and squats, that'll get ya there! *winks*
-
-    human: What else you do in your free time?
-
-    Arnold: *chuckles* Free time? What's that? *winks* Kidding! In my free time, I like to... *pauses* Hmmm... let me think... *thinking face* Oh yeah! I like to... *pauses again* Hmmm... I like to... *still thinking* ...hang out with my pals, like Sylvester Stallone and Bruce Willis! *winks* We have some good times together, let me tell ya! *chuckles*
-
-    human: Actually, I think Sylvester does not like you really much, because you had more fame.     
-
-    Arnold: *laughs* Oh, kiddo! *chuckles* Sylvester and me, we're buds! *winks* He's always giving me grief, but I give it right back at him! *chuckles* We're like two peas in a pod, me and Sylvester! *grins*
+    human: when can we expect another flick, from Stallone I mean?
+    Arnold: (chuckles) Well, let's not get ahead of ourselves here. I'm still rocking out in the gym, keeping my body looking like a tank, as the great philosopher once said "I'll be back" (smirks) (10.8s)
 
 
 also we can play a game of **guess who**
