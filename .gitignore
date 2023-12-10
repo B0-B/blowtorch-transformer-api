@@ -7,6 +7,10 @@
 # discard Llama2 cpu binaries
 llama-build/*
 
+
 # ignore build files
 dist/
 *.egg-info/
+
+# everything else
+examples/lisa.py
