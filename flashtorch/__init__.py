@@ -7,11 +7,15 @@ If not furter specified the default huggingface model will
 be palmyra-small (128M): https://huggingface.co/Writer/palmyra-small.
 '''
 
+import gc
 import torch
 import transformers, ctransformers
 from traceback import print_exc
 from time import time_ns
 from string import punctuation
+import warnings
+
+warnings.filterwarnings("ignore")
 
 class flashModel:
 
@@ -43,6 +47,7 @@ class flashModel:
             _kwargs['gpu_layers'] = gpu_layers
         if 'load_in_8bit' in kwargs and kwargs['load_in_8bit']:
             _kwargs['load_in_8bit'] = True
+        _kwargs['dtype'] = torch.float16
         for k,v in kwargs.items():
             _kwargs[k] = v
         
@@ -169,6 +174,7 @@ class flashModel:
                     stopwatch_stop = time_ns()
                     duration_in_seconds = round((stopwatch_stop - stopwatch_start)*1e-9, 2)
 
+                
                 # post-processing & format
                 processed = raw_output[0]['generated_text']  # unpack
                 processed = processed.replace(inference_input, '').replace('\n\n', '') # remove initial input and empty lines
@@ -179,6 +185,17 @@ class flashModel:
                 processed = processed.split(username+': ')[0] # remove possible answers (as the ai continues otherwise by improvising the whole dialogue)
                 if show_duration:
                     processed += f' ({duration_in_seconds}s)'
+
+
+                # check if transformer has lost path from conversation
+                if not f'{self.name}:' in processed:
+
+                    print('\n\n*** Reset Conversation ***\n\n')
+
+                    self.reset()
+
+
+                # [deprecated] cuttoff unfinished sentence.
                 # for i in range(len(processed)-1, 0, -1): # cut-off to last fulfilled sentence
                 #     char = processed[-i]
                 #     if char in '.!?':
@@ -229,6 +246,19 @@ class flashModel:
 
         return outputString
 
+    def reset (self) -> None:
+
+        '''
+        Resets the weights of a model and clears the cache from device.
+        '''
+
+        # reset weights to default
+        self.model.reset_parameters()
+
+        # clear the cache from device
+        torch.cuda.empty_cache()
+        gc.collect()
+
     def setDevice (self, device: str) -> None:
 
         '''
@@ -249,7 +279,9 @@ if __name__ == '__main__':
     flashModel('llama-2-7b-chat.Q2_K.gguf', 
                'TheBloke/Llama-2-7B-Chat-GGUF', 
                device='cpu', 
-               model_type="llama"
+               model_type="llama",
+               max_new_tokens = 1000,
+               context_length = 6000
     ).chat(
         max_new_tokens=128, 
         charTags=['helpful', 'cheeky', 'kind', 'obedient', 'honest'], 

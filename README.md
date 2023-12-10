@@ -1,11 +1,14 @@
 # flashtorch
 
-A bootstrap LLM loader for CPU/GPU inference.
+A bootstrap LLM loader for CPU/GPU inference with fully customizable GPT API.
 
 ## Features
+- simple to install with automated setup and model setup in just 2 lines.
 - Works for Windows (only CPU tested) and Linux (CPU/GPU)
+- Extendable with torch-, and transformer- compliant arguments.
+- Create a customizabe chat partner with specified character.
 - Simple and easy to understand, with few objects which handle any case.
-- Establishes quick LLM models from scratch ready for application, allows to load and chat in 2 lines of code.
+- Establishes quick LLM models from scratch ready for any application.
 - Can load models to CPU using RAM, or GPU, or both by offloading a specified amount of layers to GPU vram
 - Loads models directly from huggingface and store them in local cache
 - pytorch and transformer transformer.pipeline compliant - extendable with same keyword arguments from e.g. pipeline

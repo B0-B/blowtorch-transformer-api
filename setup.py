@@ -1,37 +1,59 @@
 #!/usr/bin/env python3
 
+'''
+flashtorch installation.
+
+
+'''
+
+import sys
 from os import system as shell
+from distutils.core import setup
 
-shell('pip install transformers[torch] ctransformers accelerate optimum h5py')
-pip install --upgrade-strategy eager optimum[amd]
-# shell('pip install --upgrade-strategy eager optimum[neural-compressor]')
+# derive package version
+# with open(__root__.joinpath('version')) as f:
+#     version = f.read()
 
-# # tensorflow-intel dependecies
-# dependencies = [
-#     ('flatbuffers', '==23.1.21'),
-#     ('google-pasta', '==0.1.1'),
-#     ('grpcio', '==1.24.3'),
-#     ('h5py', '==3.0.0'),
-#     ('libclang', '==13.0.0'),
-#     ('opt-einsum>=2.3.2', ''),
-#     ('tensorboard', '==2.13'),
-#     ('tensorflow-estimator', '==2.13.0'),
-#     ('termcolor', '==1.1.0'),
-#     ('gast', '==0.4.0'),
-#     ('keras', '==2.13.1'),
-#     ('numpy', '==1.24.3'),
-#     ('typing-extensions', '==4.0.0')
-# ]
+# read arguments
+arg = sys.argv[1]
+version = sys.argv[2]
 
-# # substitute existing packages with the necessary versions
-# for module, version in dependencies:
-#     try:
-#         shell(f'pip uninstall {module} -y')
-#         print(f'Successfully removed {module}.')
-#     except:
-#         pass
-#     try:
-#         shell(f'pip install {module}{version}')
-#         print(f'Successully installed {module}{version}')
-#     except:
-#         pass
+print('''\
+                      _.----.
+    .----------------" /  /  \\
+   (     flashtorch | |   |) |
+    `----------------._\  \  /
+                       "----'
+    
+   Fast Transformer & GPT API.
+      
+''')
+print(f' ---- flashtorch {version} setup ---- ')
+
+# choose cuda or rocm packages
+if arg == 'cuda':
+    optimum_pkg = 'optimum'
+elif arg == 'rocm':
+    optimum_pkg = 'optimum[amd]'
+else:
+    optimum_pkg = ''
+print(f'info: select {arg} packages.')
+
+# start the setup
+shell('python -m pip install --upgrade pip wheel')
+setup(
+    name='flashtorch',
+    version='1.1.0',
+    author='B0-B',
+    url='https://github.com/B0-B/flashtorch',
+    packages=['flashtorch'],
+    # py_modules=['flashtorch.py'],
+    install_requires=[
+        'transformers[torch]',
+        'ctransformers',
+        'accelerate',
+        optimum_pkg,
+        'h5py'
+    ]
+)
+print('info: done.')
