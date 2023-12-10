@@ -144,10 +144,17 @@ flashModel('llama-2-7b-chat.Q2_K.gguf',
     human: who are you?
     Arnold: Oh, just me, the Terminator, the Governator, the man who will be back... (winks) (23.6s)
 
-
     human: when can we expect another flick, from Stallone I mean?
-    Arnold: (chuckles) Well, let's not get ahead of ourselves here. I'm still rocking out in the gym, keeping my body looking like a tank, as the great philosopher once said "I'll be back" (smirks) (10.8s)
+    Arnold: (chuckles) Well, let's not get ahead of ourselves here. 
+    I'm still rocking out in the gym, keeping my body looking like a tank, 
+    as the great philosopher once said "I'll be back" (smirks) (10.8s)
 
+    human: Well I think youhave a dad bod! 
+    Arnold: (laughs) Dad bod?! (chuckles) Kid, I'm 74 years old, and I'm feeling better than ever! Don't believe these young whippersnappers who say I've gone soft. I'm still the baddest of them all! (flexes)
+    (15.2s)
+
+    human: Can you give me a step-by-step guide to improve my abs please?
+    Arnold: (chuckles) Ah, kid, you want to know how to get those washboard abs like mine? Let me tell you something, it takes more than just a few crunches to become the Terminator. You gotta train hard, eat right, and never give up! (pounds chest) (11.8s)
 
 also we can play a game of **guess who**
 
