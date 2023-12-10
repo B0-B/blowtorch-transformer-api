@@ -1,6 +1,10 @@
-# flashtorch
+<h1 align=center style='color:#fcb103'>flashtorch<br>
 
-A bootstrap LLM loader for CPU/GPU inference with fully customizable GPT API.
+[![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=A%bootstrap%LLM%loader%forCPU/GPU%inference%with%fully%customizable%GPT%API.&url=https://github.com/B0-B/flashtorchl&hashtags=AI,ML,LLM,transformer,customgpt,api,python)</h1>
+
+*A bootstrap LLM loader for CPU/GPU inference with fully customizable GPT API.*
+
+---
 
 ## Features
 - simple to install with automated setup and model setup in just 2 lines.
@@ -15,13 +19,25 @@ A bootstrap LLM loader for CPU/GPU inference with fully customizable GPT API.
 - Has automatic fallbacks for different weight formats (e.g. GGML, GGUF, bin, ..)
 
 ## Base Requirements
-Assumes drivers, opencl are installed and detects GPU via clinfo, rocminfo, nvidia-smi etc.
+Assumes drivers were correctly installed (as well as clinfo was setup correctly on Linux) and detects GPU via rocm-smi, nvidia-smi etc.
 
-## Dependencies
+## Setup
 
-    pip install transformers[torch] accelerate optimum[amd] h5py bitsandbytes
+Clone the repository
 
-optimum[amd] is used to install the Optimum package with the AMD accelerator.
+    git clone git@github.com:B0-B/flashtorch.git
+    cd flashtorch
+
+Run `build`, this will build binaries and run `pip` setup of `flashtorch` on both platforms, Windows and Linux.
+
+```bash
+# for AMD ROCm users
+python build rocm
+
+# for CUDA users
+python build cuda
+```
+    
 
 ## Usage
 By default, if no huggingface model was specified, flashtorch will load a slim model called [Writer/palmyra-small](https://huggingface.co/Writer/palmyra-small), which is good for pure testing:
