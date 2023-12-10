@@ -24,7 +24,9 @@
 - Has automatic fallbacks for different weight formats (e.g. GGML, GGUF, bin, ..)
 
 ## Base Requirements
-Assumes drivers were correctly installed (as well as clinfo was setup correctly on Linux) and detects GPU via rocm-smi, nvidia-smi etc.
+- A system with a CPU (preferably Ryzen) and `>=16GB` RAM
+- Assumes drivers were correctly installed and GPU is detectable via rocm-smi, nvidia-smi etc.
+- A solid GPT chat requires `>=6GB` of RAM/vRAM depending on device.
 
 ## Setup
 
