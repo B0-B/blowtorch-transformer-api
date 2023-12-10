@@ -4,7 +4,7 @@
 Chat with the actor, body-building legend, and former governer himself!
 '''
 
-from flashtorch import flashModel
+from blowtorch import flashModel
 
 flashModel('llama-2-7b-chat.Q2_K.gguf', 
            'TheBloke/Llama-2-7B-Chat-GGUF', 

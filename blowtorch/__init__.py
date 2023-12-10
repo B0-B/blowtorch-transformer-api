@@ -183,9 +183,14 @@ class flashModel:
                         processed = paragraph
                         break
                 processed = processed.split(username+': ')[0] # remove possible answers (as the ai continues otherwise by improvising the whole dialogue)
+                
+                # append to context
+                self.context[id] += processed + '\n'
+                
+                # now add time duration (only for printing but not context)
+                # otherwise transformer would generate random times
                 if show_duration:
                     processed += f' ({duration_in_seconds}s)'
-
 
                 # check if transformer has lost path from conversation
                 if not f'{self.name}:' in processed:
@@ -194,19 +199,10 @@ class flashModel:
 
                     self.reset()
 
-
-                # [deprecated] cuttoff unfinished sentence.
-                # for i in range(len(processed)-1, 0, -1): # cut-off to last fulfilled sentence
-                #     char = processed[-i]
-                #     if char in '.!?':
-                #         processed = processed[:i]
-                #         break
-
                 # output
                 print(processed)
                 
-                # append to context
-                self.context[id] += processed + '\n'
+                
                 
             except KeyboardInterrupt:
                 
@@ -253,7 +249,12 @@ class flashModel:
         '''
 
         # reset weights to default
-        self.model.reset_parameters()
+        try:
+            # transformers
+            self.model.reset_parameters()
+        except:
+            # ctransformers
+            self.model.reset()
 
         # clear the cache from device
         torch.cuda.empty_cache()
@@ -269,6 +270,8 @@ class flashModel:
             self.device = 'cuda'
         else:
             self.device = 'cpu'
+
+    
 
 if __name__ == '__main__':
 

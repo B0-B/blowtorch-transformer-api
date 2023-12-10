@@ -1,6 +1,6 @@
-<h1 align=center style='color:#fcb103'>flashtorch<br>
+<h1 align=center style='color:#fcb103'>blowtorch<br>
 
-<!-- [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=A%bootstrap%LLM%loader%forCPU/GPU%inference%with%fully%customizable%GPT%API.&url=https://github.com/B0-B/flashtorchl&hashtags=AI,ML,LLM,transformer,customgpt,api,python) -->
+<!-- [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=A%bootstrap%LLM%loader%forCPU/GPU%inference%with%fully%customizable%GPT%API.&url=https://github.com/B0-B/blowtorchl&hashtags=AI,ML,LLM,transformer,customgpt,api,python) -->
 
 </h1>
 
@@ -25,10 +25,10 @@ Assumes drivers were correctly installed (as well as clinfo was setup correctly 
 
 Clone the repository
 
-    git clone git@github.com:B0-B/flashtorch.git
-    cd flashtorch
+    git clone git@github.com:B0-B/blowtorch.git
+    cd blowtorch
 
-Run `build`, this will build binaries and run `pip` setup of `flashtorch` on both platforms, Windows and Linux.
+Run `build`, this will build binaries and run `pip` setup of `blowtorch` on both platforms, Windows and Linux.
 
 ```bash
 # for AMD ROCm users
@@ -40,18 +40,18 @@ python build cuda
     
 
 ## Usage
-By default, if no huggingface model was specified, flashtorch will load a slim model called [Writer/palmyra-small](https://huggingface.co/Writer/palmyra-small), which is good for pure testing:
+By default, if no huggingface model was specified, blowtorch will load a slim model called [Writer/palmyra-small](https://huggingface.co/Writer/palmyra-small), which is good for pure testing:
 
 ```python
-from flashtorch import flashModel
+from blowtorch import flashModel
 flashModel(device='cpu').cli()
 ```
 
 ## Command Line Inference (CLI)
-Otherwise, assuming flashtorch have just been installed, pre-trained models like e.g. Llama2 can directly be ported from huggingface hub, and subsequently start a conversation in just 3 lines:
+Otherwise, assuming blowtorch have just been installed, pre-trained models like e.g. Llama2 can directly be ported from huggingface hub, and subsequently start a conversation in just 3 lines:
 
 ```python
-from flashtorch import flashModel
+from blowtorch import flashModel
 
 model = flashModel(hugging_face_path='TheBloke/Llama-2-7B-Chat-GGML', device='cpu', model_type="llama") # model_type is transformer compliant arg
 # start the command line interface for text interaction with some transformer.pipeline arguments
@@ -113,7 +113,7 @@ An attempt to write a letter:
 
 # GPT-like Chat
 
-The chat function of flashtorch can create a gpt-like chatbot, with specified character.
+The chat function of blowtorch can create a gpt-like chatbot, with specified character.
 
     User: Hello, AI.
     AI: Hello! How can I assist you today?
@@ -122,10 +122,10 @@ The chat function of flashtorch can create a gpt-like chatbot, with specified ch
     human: Can you explain me Ehrnfest's theorem?
     AI: Of course, I'd be happy to help! Ehrnfest's Theorem states that if two functions are continuous on the same interval, then their compositions are also continuous on that interval. Let me know if you have any questions or need further clarification.
 
-Also flashtorch can impersonate people, like well known celebrities, here is an example of a cheeky chatbot who talks like Arnold Schwarzenegger
+Also blowtorch can impersonate people, like well known celebrities, here is an example of a cheeky chatbot who talks like Arnold Schwarzenegger
 
 ```python
-from flashtorch import flashModel
+from blowtorch import flashModel
 
 flashModel('llama-2-7b-chat.Q2_K.gguf', 
     'TheBloke/Llama-2-7B-Chat-GGUF', 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 '''
-flashtorch installation.
+blowtorch installation.
 '''
 
 import sys
@@ -19,14 +19,14 @@ version = sys.argv[2]
 print('''\
                       _.----.
     .----------------" /  /  \\
-   (     flashtorch | |   |) |
+   (     blowtorch | |   |) |
     `----------------._\  \  /
                        "----'
     
    Fast Transformer & GPT API.
       
 ''')
-print(f' ---- flashtorch {version} setup ---- ')
+print(f' ---- blowtorch {version} setup ---- ')
 
 # choose cuda or rocm packages
 if arg == 'cuda':
@@ -40,12 +40,12 @@ print(f'info: select {arg} packages.')
 # start the setup
 shell('python -m pip install --upgrade pip wheel')
 setup(
-    name='flashtorch',
+    name='blowtorch',
     version='1.1.0',
     author='B0-B',
-    url='https://github.com/B0-B/flashtorch',
-    packages=['flashtorch'],
-    # py_modules=['flashtorch.py'],
+    url='https://github.com/B0-B/blowtorch',
+    packages=['blowtorch'],
+    # py_modules=['blowtorch.py'],
     install_requires=[
         'transformers[torch]',
         'ctransformers',

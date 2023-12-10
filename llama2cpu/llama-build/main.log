@@ -1,11 +1,11 @@
 [1701896713] Log start
-[1701896713] Cmd: C:\Users\weezl\Desktop\B0-B\Scripting\SundayMKII\language\llm\FlashTorch\llama\llama.cpp\build\main.exe -t 8 -m C:\Users\weezl\Desktop\B0-B\Scripting\SundayMKII\language\llm\FlashTorch\llama\llama-2-7b-chat.ggmlv3.q2_K.bin --color -c 2048 --temp 0.7 --repeat_penalty 1.1 -n -1 -p Hello
+[1701896713] Cmd: C:\Users\weezl\Desktop\B0-B\Scripting\SundayMKII\language\llm\blowtorch\llama\llama.cpp\build\main.exe -t 8 -m C:\Users\weezl\Desktop\B0-B\Scripting\SundayMKII\language\llm\blowtorch\llama\llama-2-7b-chat.ggmlv3.q2_K.bin --color -c 2048 --temp 0.7 --repeat_penalty 1.1 -n -1 -p Hello
 [1701896713] main: build = 1617 (05cd6e5)
 [1701896713] main: built with MSVC 19.37.32826.1 for x64
 [1701896713] main: seed  = 1701896713
 [1701896713] main: llama backend init
 [1701896713] main: load the model and apply lora adapter, if any
-[1701896713] error loading model: llama_model_loader: failed to load model from C:\Users\weezl\Desktop\B0-B\Scripting\SundayMKII\language\llm\FlashTorch\llama\llama-2-7b-chat.ggmlv3.q2_K.bin
+[1701896713] error loading model: llama_model_loader: failed to load model from C:\Users\weezl\Desktop\B0-B\Scripting\SundayMKII\language\llm\blowtorch\llama\llama-2-7b-chat.ggmlv3.q2_K.bin
 
 [1701896713] llama_load_model_from_file: failed to load model
 [1701896713] main: error: unable to load model

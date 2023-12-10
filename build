@@ -13,4 +13,4 @@ with open(__root__.joinpath('version')) as f:
 
     version = f.read()
     shell(f'python setup.py sdist {sys.argv[0]} {version}')
-    shell(f'pip install ./dist/flashtorch-{version}.tar.gz')
+    shell(f'pip install ./dist/blowtorch-{version}.tar.gz')
