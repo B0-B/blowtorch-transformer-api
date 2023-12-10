@@ -1,6 +1,8 @@
 <h1 align=center style='color:#fcb103'>flashtorch<br>
 
-[![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=A%bootstrap%LLM%loader%forCPU/GPU%inference%with%fully%customizable%GPT%API.&url=https://github.com/B0-B/flashtorchl&hashtags=AI,ML,LLM,transformer,customgpt,api,python)</h1>
+<!-- [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=A%bootstrap%LLM%loader%forCPU/GPU%inference%with%fully%customizable%GPT%API.&url=https://github.com/B0-B/flashtorchl&hashtags=AI,ML,LLM,transformer,customgpt,api,python) -->
+
+</h1>
 
 *A bootstrap LLM loader for CPU/GPU inference with fully customizable GPT API.*
 
