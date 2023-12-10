@@ -272,23 +272,25 @@ class flashModel:
 
 if __name__ == '__main__':
 
+    pass
+
     # flashModel(device='cpu').cli() # run small palmyra model for testing
     # flashModel(hugging_face_path='TheBloke/Llama-2-7B-Chat-GGML', device='cpu', model_type="llama").cli(max_new_tokens=64, do_sample=True, temperature=0.8, repetition_penalty=1.1)
     
 
-    flashModel('llama-2-7b-chat.Q2_K.gguf', 
-               'TheBloke/Llama-2-7B-Chat-GGUF', 
-               device='cpu', 
-               model_type="llama",
-               max_new_tokens = 1000,
-               context_length = 6000
-    ).chat(
-        max_new_tokens=128, 
-        charTags=['helpful', 'cheeky', 'kind', 'obedient', 'honest'], 
-        do_sample=False, 
-        temperature=0.8, 
-        repetition_penalty=1.1
-    )
+    # flashModel('llama-2-7b-chat.Q2_K.gguf', 
+    #            'TheBloke/Llama-2-7B-Chat-GGUF', 
+    #            device='cpu', 
+    #            model_type="llama",
+    #            max_new_tokens = 1000,
+    #            context_length = 6000
+    # ).chat(
+    #     max_new_tokens=128, 
+    #     charTags=['helpful', 'cheeky', 'kind', 'obedient', 'honest'], 
+    #     do_sample=False, 
+    #     temperature=0.8, 
+    #     repetition_penalty=1.1
+    # )
     
 
     # flashModel('llama-2-7b-chat.Q2_K.gguf', 

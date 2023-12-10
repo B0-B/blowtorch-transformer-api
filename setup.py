@@ -2,8 +2,6 @@
 
 '''
 flashtorch installation.
-
-
 '''
 
 import sys
