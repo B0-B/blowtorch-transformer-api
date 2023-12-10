@@ -13,4 +13,4 @@ dist/
 *.egg-info/
 
 # everything else
-examples/lisa.py
+*/lisa.py
