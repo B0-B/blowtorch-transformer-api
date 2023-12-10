@@ -1,5 +1,7 @@
 <h1 align=center style='color:#fcb103'>blowtorch<br>
 
+<img src="logo.png" style="text-align:center;padding-top:100px;padding-bottom:100px; width:500px">
+
 <!-- [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=A%bootstrap%LLM%loader%forCPU/GPU%inference%with%fully%customizable%GPT%API.&url=https://github.com/B0-B/blowtorchl&hashtags=AI,ML,LLM,transformer,customgpt,api,python) -->
 
 </h1>

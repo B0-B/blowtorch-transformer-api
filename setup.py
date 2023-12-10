@@ -17,11 +17,8 @@ arg = sys.argv[1]
 version = sys.argv[2]
 
 print('''\
-                      _.----.
-    .----------------" /  /  \\
-   (     blowtorch | |   |) |
-    `----------------._\  \  /
-                       "----'
+
+            blowtorch
     
    Fast Transformer & GPT API.
       
