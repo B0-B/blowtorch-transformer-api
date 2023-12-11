@@ -39,10 +39,13 @@ Run `build`, this will build binaries and run `pip` setup of `blowtorch` on both
 
 ```bash
 # for AMD ROCm users
-python build rocm
+python setup.py install rocm
 
 # for CUDA users
-python build cuda
+python setup.py install cuda
+
+# just CPU
+python setup.py install cpu
 ```
     
 

@@ -12,5 +12,6 @@ __root__ = Path(__file__).parent
 with open(__root__.joinpath('version')) as f:
 
     version = f.read()
-    shell(f'python setup.py sdist {sys.argv[0]} {version}')
-    shell(f'pip install ./dist/blowtorch-{version}.tar.gz')
+
+shell(f'python setup.py sdist {sys.argv[1]}')
+shell(f'pip install ./dist/blowtorch-{version}.tar.gz')
