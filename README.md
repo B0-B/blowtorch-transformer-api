@@ -57,7 +57,8 @@ python setup.py install cpu
 <!-- USAGE -->
 <details>
 <summary style="font-size:2rem">Usage</summary>
-<br>
+
+---
 
 By default, if no huggingface model was specified, blowtorch will load a slim model called [Writer/palmyra-small](https://huggingface.co/Writer/palmyra-small), which is good for pure testing:
 
@@ -72,10 +73,11 @@ client(device='cpu').cli()
 <!-- CLI -->
 <details>
 <summary style="font-size:2rem">Command Line Inference (CLI)</summary>
-<br>
+
+---
+
 Otherwise, assuming blowtorch have just been installed, pre-trained models like e.g. Llama2 can directly be ported from huggingface hub, and subsequently start a conversation in just 3 lines:
 
-<br>
 
 ```python
 from blowtorch import client
@@ -101,7 +103,8 @@ Llama-2-7B-Chat-GGML: [{'generated_text': 'can you explain what a dejavu is?\n\n
 <!-- GPT CHAT  -->
 <details>
 <summary style="font-size:2rem">Custom GPT Chat</summary>
-<br>
+
+---
 
 The chat function of blowtorch can create a gpt-like chatbot, with a specified character.
 
@@ -174,7 +177,8 @@ also we can play a game of **guess who**
 <!-- API EXAMPLES -->
 <details>
 <summary style="font-size:2rem">Chat API Examples</summary>
-<br>
+
+---
 
 
 The following is an example of loading a specific model file (from huggingface card) in **GGUF** format. This will be automatically loaded with [ctransformers](https://github.com/marella/ctransformers) in a single line. 
