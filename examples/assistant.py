@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 '''
-Chat with Dr. Lisa Su, the CEO of Advanced Micro Devices Inc.
+Chat with a sophisticated AI assistant.
 '''
 
 from blowtorch import client
