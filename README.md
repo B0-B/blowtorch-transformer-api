@@ -23,7 +23,7 @@
 - Loads models directly from huggingface and store them in local cache.
 - Has automatic fallbacks for different weight formats (e.g. GGML, GGUF, bin, ..)
 
-## Base Requirements
+## Base Requirements    
 - A system with a CPU (preferably Ryzen) and `>=16GB` RAM
 - Assumes drivers were correctly installed and GPU is detectable via rocm-smi, nvidia-smi etc.
 - A solid GPT chat requires `>=6GB` of RAM/vRAM depending on device.
@@ -53,19 +53,19 @@ python setup.py install cpu
 By default, if no huggingface model was specified, blowtorch will load a slim model called [Writer/palmyra-small](https://huggingface.co/Writer/palmyra-small), which is good for pure testing:
 
 ```python
-from blowtorch import flashModel
-flashModel(device='cpu').cli()
+from blowtorch import client
+client(device='cpu').cli()
 ```
 
 ## Command Line Inference (CLI)
 Otherwise, assuming blowtorch have just been installed, pre-trained models like e.g. Llama2 can directly be ported from huggingface hub, and subsequently start a conversation in just 3 lines:
 
 ```python
-from blowtorch import flashModel
+from blowtorch import client
 
-model = flashModel(hugging_face_path='TheBloke/Llama-2-7B-Chat-GGML', device='cpu', model_type="llama") # model_type is transformer compliant arg
+AI = client(hugging_face_path='TheBloke/Llama-2-7B-Chat-GGML', device='cpu', model_type="llama") # model_type is transformer compliant arg
 # start the command line interface for text interaction with some transformer.pipeline arguments
-model.cli(max_new_tokens=64, do_sample=True, temperature=0.8, repetition_penalty=1.2)
+AI.cli(max_new_tokens=64, do_sample=True, temperature=0.8, repetition_penalty=1.2)
 ```
 ```python
 Human:special relativity
@@ -80,31 +80,25 @@ Llama-2-7B-Chat-GGML: [{'generated_text': 'can you explain what a dejavu is?\n\n
 
 ## Chat API Examples
 
-The following is an example of loading a specific model file (from huggingface card) in **GGUF** format. This will be automatically loaded with [ctransformers](https://github.com/marella/ctransformers)
+The following is an example of loading a specific model file (from huggingface card) in **GGUF** format. This will be automatically loaded with [ctransformers](https://github.com/marella/ctransformers) in a single line. Note, that the max token size was increased for more output space:
 
 ```python
-flashModel('llama-2-7b-chat.Q2_K.gguf', 'TheBloke/Llama-2-7B-Chat-GGUF', 'cpu', model_type="llama").chat(max_new_tokens=512, do_sample=False, temperature=0.8, repetition_penalty=1.1)
+from blowtorch import client
+client('llama-2-7b-chat.Q2_K.gguf', 'TheBloke/Llama-2-7B-Chat-GGUF', 'cpu', model_type="llama").chat(max_new_tokens=512, do_sample=False, temperature=0.8, repetition_penalty=1.1)
 ```
 
-    human: how do I start a thread in python? 
-
-    Llama-2-7B-Chat-GGUF:
-    Unterscheidung between threads and processes in Python.In Python, you can use the `threading` module to create threads. Here is an example of how to create a simple thread:
-
-    import threadingdef my_function():
-        print("Hello from a thread!")# Create a thread that runs my_function
-    t = threading.Thread(target=my_function)
-    t.start()
-
-    This will create a new thread that runs the `my_function()` function. The `target` parameter of the `Thread` class specifies the function that should be run in the thread.
-    To distinguish between threads and processes in Python, you can consider the following factors:
-    1. Creation: Threads are created using the `threading.Thread` class, while processes are created using the `os.fork()` method.
-    2. Parent-child relationship: In Python, a process is always the parent of its threads, meaning that the parent process can communicate with its threads but not vice versa. In contrast, threads within a process are peers, meaning they can communicate with each other directly without going through the parent process.
-    3. Memory management: Threads share the same memory space as their parent process, which means they have access to the same global variables and can communicate with each other directly. In contrast, processes have their own separate memory space, which means they cannot directly access the global variables of their parent process.
-    4. Synchronization: Threads can synchronize with each other using the `threading.Lock` or `threading.Semaphore` classes, while processes cannot directly synchronize with each other.       
-    5. Communication: Threads can communicate with each other using inter-thread communication mechanisms like queues, mutexes, and condition variables. In contrast, processes communicate with each other using system calls or inter-process communication mechanisms like pipes, sockets, and message queues.
-    6. Scheduling: Threads are scheduled by the operating system's scheduler, which decides when to switch between them. In contrast, processes are scheduled by their parent process, which decides when to switch between them.
-    7. Context switching: When a thread is created, it inherits the context of its parent process, including its open files, shared memory, and other resources. In contrast, a process creation of course switching between processes have to create
+    Human: please create a python script which loads a huggingface model into transformers.
+    AI Assistant: Of course! To load a Hugging Face model into Transformers, you will need to use the `transformers` library. Here's an example of how you can do this:
+    ```
+    import pandas as pd
+    from transformers import AutoTokenizer, AutoModelForSequenceClassification# Load the Hugging Face model
+    model_name = "bert-base-uncased"
+    tokenizer = AutoTokenizer.from_pretrained(model_name)# Create a new dataset for training
+    train_data = pd.DataFrame({"text": ["This is a test sentence."], "label": [1]})# Train the model
+    model = AutoModelForSequenceClassification.from_pretrained(tokenizer, train_data=train_data)
+    ```
+    Please let me know if you have any questions or need further assistance.
+    (82.27s)
 
 An attempt to write a letter:
 
@@ -123,7 +117,7 @@ An attempt to write a letter:
 
 # GPT-like Chat
 
-The chat function of blowtorch can create a gpt-like chatbot, with specified character.
+The chat function of blowtorch can create a gpt-like chatbot, with a specified character.
 
     User: Hello, AI.
     AI: Hello! How can I assist you today?
@@ -135,9 +129,9 @@ The chat function of blowtorch can create a gpt-like chatbot, with specified cha
 Also blowtorch can impersonate people, like well known celebrities, here is an example of a cheeky chatbot who talks like Arnold Schwarzenegger
 
 ```python
-from blowtorch import flashModel
+from blowtorch import client
 
-flashModel('llama-2-7b-chat.Q2_K.gguf', 
+client('llama-2-7b-chat.Q2_K.gguf', 
     'TheBloke/Llama-2-7B-Chat-GGUF', 
     name='Arnold',
     device='cpu', 

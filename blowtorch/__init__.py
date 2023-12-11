@@ -17,7 +17,7 @@ import warnings
 
 warnings.filterwarnings("ignore")
 
-class flashModel:
+class client:
 
     '''
     model_file          e.g. llama-2-7b-chat.Q2_K.gguf
@@ -179,9 +179,10 @@ class flashModel:
                 processed = raw_output[0]['generated_text']  # unpack
                 processed = processed.replace(inference_input, '').replace('\n\n', '') # remove initial input and empty lines
                 for paragraph in processed.split('\n'): # extract the first answer and disregard further generations
-                    if 'AI' in paragraph[:3]:
-                        processed = paragraph
+                    if f'{username}:' in paragraph[:3]:
+                        # processed = paragraph
                         break
+                    processed += '\n'+paragraph
                 processed = processed.split(username+': ')[0] # remove possible answers (as the ai continues otherwise by improvising the whole dialogue)
                 
                 # append to context
@@ -277,11 +278,11 @@ if __name__ == '__main__':
 
     pass
 
-    # flashModel(device='cpu').cli() # run small palmyra model for testing
-    # flashModel(hugging_face_path='TheBloke/Llama-2-7B-Chat-GGML', device='cpu', model_type="llama").cli(max_new_tokens=64, do_sample=True, temperature=0.8, repetition_penalty=1.1)
+    # client(device='cpu').cli() # run small palmyra model for testing
+    # client(hugging_face_path='TheBloke/Llama-2-7B-Chat-GGML', device='cpu', model_type="llama").cli(max_new_tokens=64, do_sample=True, temperature=0.8, repetition_penalty=1.1)
     
 
-    # flashModel('llama-2-7b-chat.Q2_K.gguf', 
+    # client('llama-2-7b-chat.Q2_K.gguf', 
     #            'TheBloke/Llama-2-7B-Chat-GGUF', 
     #            device='cpu', 
     #            model_type="llama",
@@ -296,7 +297,7 @@ if __name__ == '__main__':
     # )
     
 
-    # flashModel('llama-2-7b-chat.Q2_K.gguf', 
+    # client('llama-2-7b-chat.Q2_K.gguf', 
     #            'TheBloke/Llama-2-7B-Chat-GGUF', 
     #            name='Arnold',
     #            device='cpu', 

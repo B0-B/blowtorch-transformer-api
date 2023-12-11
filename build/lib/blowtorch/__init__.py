@@ -17,7 +17,7 @@ import warnings
 
 warnings.filterwarnings("ignore")
 
-class flashModel:
+class client:
 
     '''
     model_file          e.g. llama-2-7b-chat.Q2_K.gguf
@@ -277,11 +277,11 @@ if __name__ == '__main__':
 
     pass
 
-    # flashModel(device='cpu').cli() # run small palmyra model for testing
-    # flashModel(hugging_face_path='TheBloke/Llama-2-7B-Chat-GGML', device='cpu', model_type="llama").cli(max_new_tokens=64, do_sample=True, temperature=0.8, repetition_penalty=1.1)
+    # client(device='cpu').cli() # run small palmyra model for testing
+    # client(hugging_face_path='TheBloke/Llama-2-7B-Chat-GGML', device='cpu', model_type="llama").cli(max_new_tokens=64, do_sample=True, temperature=0.8, repetition_penalty=1.1)
     
 
-    # flashModel('llama-2-7b-chat.Q2_K.gguf', 
+    # client('llama-2-7b-chat.Q2_K.gguf', 
     #            'TheBloke/Llama-2-7B-Chat-GGUF', 
     #            device='cpu', 
     #            model_type="llama",
@@ -296,7 +296,7 @@ if __name__ == '__main__':
     # )
     
 
-    # flashModel('llama-2-7b-chat.Q2_K.gguf', 
+    # client('llama-2-7b-chat.Q2_K.gguf', 
     #            'TheBloke/Llama-2-7B-Chat-GGUF', 
     #            name='Arnold',
     #            device='cpu', 
