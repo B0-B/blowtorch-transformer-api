@@ -80,7 +80,10 @@ Llama-2-7B-Chat-GGML: [{'generated_text': 'can you explain what a dejavu is?\n\n
 
 ## Chat API Examples
 
-The following is an example of loading a specific model file (from huggingface card) in **GGUF** format. This will be automatically loaded with [ctransformers](https://github.com/marella/ctransformers) in a single line. Note, that the max token size was increased for more output space:
+The following is an example of loading a specific model file (from huggingface card) in **GGUF** format. This will be automatically loaded with [ctransformers](https://github.com/marella/ctransformers) in a single line. 
+
+blowtorch's chat method tracks the context, so the LLM can argue and even write code.
+For better output increase the max token size.
 
 ```python
 from blowtorch import client
