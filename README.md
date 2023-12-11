@@ -28,7 +28,11 @@
 - Assumes drivers were correctly installed and GPU is detectable via rocm-smi, nvidia-smi etc.
 - A solid GPT chat requires `>=6GB` of RAM/vRAM depending on device.
 
-## Setup
+
+<!-- SETUP -->
+<details>
+<summary style="font-size:2rem">Setup</summary>
+<br>
 
 Clone the repository
 
@@ -47,18 +51,31 @@ python setup.py install cuda
 # just CPU
 python setup.py install cpu
 ```
-    
+</details>  
 
-## Usage
+
+<!-- USAGE -->
+<details>
+<summary style="font-size:2rem">Usage</summary>
+<br>
+
 By default, if no huggingface model was specified, blowtorch will load a slim model called [Writer/palmyra-small](https://huggingface.co/Writer/palmyra-small), which is good for pure testing:
 
 ```python
 from blowtorch import client
 client(device='cpu').cli()
 ```
+</details>
 
-## Command Line Inference (CLI)
+
+
+<!-- CLI -->
+<details>
+<summary style="font-size:2rem">Command Line Inference (CLI)</summary>
+<br>
 Otherwise, assuming blowtorch have just been installed, pre-trained models like e.g. Llama2 can directly be ported from huggingface hub, and subsequently start a conversation in just 3 lines:
+
+<br>
 
 ```python
 from blowtorch import client
@@ -77,48 +94,14 @@ of motion, time is a fixed quantity that moves along with space, yet according t
 Human: can you explain what a dejavu is?
 Llama-2-7B-Chat-GGML: [{'generated_text': 'can you explain what a dejavu is?\n\nAnswer: A deja vu is a French term that refers to a feeling of familiarity or recognition that cannot be explained. It\'s the sensation of having already experienced an event, situation, or place, even though you know that you have not. Deja vu can also be described as a "'}]
 ```
+</details>
 
-## Chat API Examples
 
-The following is an example of loading a specific model file (from huggingface card) in **GGUF** format. This will be automatically loaded with [ctransformers](https://github.com/marella/ctransformers) in a single line. 
 
-blowtorch's chat method tracks the context, so the LLM can argue and even write code.
-For better output increase the max token size.
-
-```python
-from blowtorch import client
-client('llama-2-7b-chat.Q2_K.gguf', 'TheBloke/Llama-2-7B-Chat-GGUF', 'cpu', model_type="llama").chat(max_new_tokens=512, do_sample=False, temperature=0.8, repetition_penalty=1.1)
-```
-
-    Human: please create a python script which loads a huggingface model into transformers.
-    AI Assistant: Of course! To load a Hugging Face model into Transformers, you will need to use the `transformers` library. Here's an example of how you can do this:
-    ```
-    import pandas as pd
-    from transformers import AutoTokenizer, AutoModelForSequenceClassification# Load the Hugging Face model
-    model_name = "bert-base-uncased"
-    tokenizer = AutoTokenizer.from_pretrained(model_name)# Create a new dataset for training
-    train_data = pd.DataFrame({"text": ["This is a test sentence."], "label": [1]})# Train the model
-    model = AutoModelForSequenceClassification.from_pretrained(tokenizer, train_data=train_data)
-    ```
-    Please let me know if you have any questions or need further assistance.
-    (82.27s)
-
-An attempt to write a letter:
-
-    human: Write a letter of a russia soldier who writes a letter from germany in 1945 to his mother in Russia.
-
-    Llama-2-7B-Chat-GGUF:  Unterscheidung von der Ukraine und Belarus.
-    Dear Mother,
-    I hope this letter finds you in good health and spirits. I am writing to you from Germany, where I have been deployed with my unit since the beginning of this year. It has been a long and 
-    difficult journey, but I am proud to be serving my country in this time of need.
-    The war in Europe is coming to an end, and we are close to victory. I can see the end of the tunnel, and I know that soon we will be able to return home and rebuild our country. I am proud of what we have accomplished so far, and I know that our sacrifices will not be forgotten.
-    But even in the midst of all this chaos and destruction, I cannot help but think of you and father back in Russia. I miss you both dearly, and I wish you were here with me to share in this momentous occasion. I know that you are proud of me too, and I hope that you are taking care of yourselves and staying safe during these difficult times.
-    Mother, I want you to know that I have seen many things on this journey that I will never forget. The sights and sounds of war are something that no one should ever have to experience, but I know that it is something that I will always carry with me. I have seen the worst of humanity, but I have also seen the best. I have seen people come together in ways that I never thought possible, and I have seen the resilience and strength of the human spirit.
-    I know that this war will soon be over, and I will be returning home to you and father. I cannot wait to hold you both in my arms again and to start rebuilding our lives together. Until then, know that I love you both more than anything in the world, and that I will always be with you in spirit.
-    Your loving son,
-    [Soldier's Name]
-
-# GPT-like Chat
+<!-- GPT CHAT  -->
+<details>
+<summary style="font-size:2rem">Custom GPT Chat</summary>
+<br>
 
 The chat function of blowtorch can create a gpt-like chatbot, with a specified character.
 
@@ -184,3 +167,54 @@ also we can play a game of **guess who**
     human: Yes, the person is from ancient times!
     Arnold: *excitedly* Oh boy, this is getting interesting! *nods* So, this person lived over 2000 years ago? *asks innocently* And what else can you tell me about them? *curious expression*
     human: Yes!
+</details>
+
+
+
+<!-- API EXAMPLES -->
+<details>
+<summary style="font-size:2rem">Chat API Examples</summary>
+<br>
+
+
+The following is an example of loading a specific model file (from huggingface card) in **GGUF** format. This will be automatically loaded with [ctransformers](https://github.com/marella/ctransformers) in a single line. 
+
+blowtorch's chat method tracks the context, so the LLM can argue and even write code.
+For better output increase the max token size.
+
+```python
+from blowtorch import client
+client('llama-2-7b-chat.Q2_K.gguf', 'TheBloke/Llama-2-7B-Chat-GGUF', 'cpu', model_type="llama").chat(max_new_tokens=512, do_sample=False, temperature=0.8, repetition_penalty=1.1)
+```
+
+    Human: please create a python script which loads a huggingface model into transformers.
+    AI Assistant: Of course! To load a Hugging Face model into Transformers, you will need to use the `transformers` library. Here's an example of how you can do this:
+    ```
+    import pandas as pd
+    from transformers import AutoTokenizer, AutoModelForSequenceClassification# Load the Hugging Face model
+    model_name = "bert-base-uncased"
+    tokenizer = AutoTokenizer.from_pretrained(model_name)# Create a new dataset for training
+    train_data = pd.DataFrame({"text": ["This is a test sentence."], "label": [1]})# Train the model
+    model = AutoModelForSequenceClassification.from_pretrained(tokenizer, train_data=train_data)
+    ```
+    Please let me know if you have any questions or need further assistance.
+    (82.27s)
+
+An attempt to write a letter:
+
+    human: Write a letter of a russia soldier who writes a letter from germany in 1945 to his mother in Russia.
+
+    Llama-2-7B-Chat-GGUF:  Unterscheidung von der Ukraine und Belarus.
+    Dear Mother,
+    I hope this letter finds you in good health and spirits. I am writing to you from Germany, where I have been deployed with my unit since the beginning of this year. It has been a long and 
+    difficult journey, but I am proud to be serving my country in this time of need.
+    The war in Europe is coming to an end, and we are close to victory. I can see the end of the tunnel, and I know that soon we will be able to return home and rebuild our country. I am proud of what we have accomplished so far, and I know that our sacrifices will not be forgotten.
+    But even in the midst of all this chaos and destruction, I cannot help but think of you and father back in Russia. I miss you both dearly, and I wish you were here with me to share in this momentous occasion. I know that you are proud of me too, and I hope that you are taking care of yourselves and staying safe during these difficult times.
+    Mother, I want you to know that I have seen many things on this journey that I will never forget. The sights and sounds of war are something that no one should ever have to experience, but I know that it is something that I will always carry with me. I have seen the worst of humanity, but I have also seen the best. I have seen people come together in ways that I never thought possible, and I have seen the resilience and strength of the human spirit.
+    I know that this war will soon be over, and I will be returning home to you and father. I cannot wait to hold you both in my arms again and to start rebuilding our lives together. Until then, know that I love you both more than anything in the world, and that I will always be with you in spirit.
+    Your loving son,
+    [Soldier's Name]
+</details>
+
+
+
