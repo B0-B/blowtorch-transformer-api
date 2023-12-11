@@ -10,6 +10,7 @@ llama-build/*
 
 # ignore build files
 dist/
+build/
 *.egg-info/
 
 # everything else
