@@ -122,7 +122,8 @@ class client:
         duration = (stopwatch_stop - stopwatch_start) * 1e-9
 
         # Get the memory usage of the current process
-        memory_usage = self.memoryUsage()
+        memory_usage = self.ramUsage() # memory occupied by the process in total
+        vram_usage = self.vramUsage() # memory allocated b torch on gpu
 
         # unpack
         string = raw_output[0]['generated_text']
@@ -143,6 +144,7 @@ class client:
         print(
             f'Device: {self.getDeviceName()}',
             f'\nRAM Usage: {memory_usage[0]} {memory_usage[1]}',
+            f'\nvRAM Usage: {vram_usage[0]} {vram_usage[1]}',
             f'\nMax. Token Window: {token_length}',
             f'\nTokens Generated: {tokens}',
             f'\nBytes Generated: {bytes } bytes'
@@ -292,7 +294,7 @@ class client:
 
         return self.pipe(input_text, max_new_tokens=max_new_tokens, **pipe_kwargs)
 
-    def memoryUsage (self) -> tuple[float, str]:
+    def ramUsage (self) -> tuple[float, str]:
 
         '''
         Returns the memory used by the current process.
@@ -301,9 +303,13 @@ class client:
         '''
         
         suffix = ['b', 'kb', 'mb', 'gb', 'tb']
+
+        # measure RAM usage
         process = psutil.Process(getpid())
         memory_info = process.memory_info()
         memory_usage = int(memory_info.rss) # in bytes
+
+        # select correct suffix
         ind = 0
         while memory_usage >= 100:
             memory_usage /= 1024
@@ -312,6 +318,30 @@ class client:
 
         return (memory_usage, suffix[ind])
     
+    def vramUsage (self) -> tuple[float, str]:
+
+        '''
+        Returns the current vRAM usage.
+        '''
+
+        suffix = ['b', 'kb', 'mb', 'gb', 'tb']
+
+        try:
+            # get the vRAM allocated by torch
+            vram_usage = torch.cuda.memory_allocated(0)
+        except:
+            # set to zero if torch is not compiled for gpu
+            vram_usage = 0
+        
+        # select correct suffix
+        ind = 0
+        while vram_usage >= 100:
+            vram_usage /= 1024
+            ind += 1
+        vram_usage = round(vram_usage, 1)
+
+        return (vram_usage, suffix[ind])
+
     def generate (self, input_text:str, max_new_tokens:int=128) -> str:
 
         '''
