@@ -34,7 +34,7 @@ print(f' ---- blowtorch {version} setup ---- ')
 print(f'info: select {arg} packages.')
 
 # start the setup
-shell('python -m pip install --upgrade pip wheel')
+shell('python -m pip install --upgrade pip wheel setuptools')
 setup(
     name='blowtorch',
     version=version,

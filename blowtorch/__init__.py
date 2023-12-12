@@ -8,12 +8,16 @@ be palmyra-small (128M): https://huggingface.co/Writer/palmyra-small.
 '''
 
 import gc
+import re
 import torch
+import platform
 import transformers, ctransformers
 from traceback import print_exc
 from time import time_ns
 from string import punctuation
 import warnings
+import subprocess
+
 
 warnings.filterwarnings("ignore")
 
@@ -102,15 +106,16 @@ class client:
         # create pipeline
         self.pipe = transformers.pipeline("text-generation", model=self.model, tokenizer=self.tokenizer)
 
-    def bench (self) -> None:
+    def bench (self, token_length: int=128) -> None:
 
         '''
         A quick benchmark of the loaded model.
         '''
 
         print('info: start benchmark ...')
+
         stopwatch_start = time_ns()
-        raw_output = self.inference('please write a generic long letter', 512)
+        raw_output = self.inference('please write a generic long letter', token_length)
         stopwatch_stop = time_ns()
         duration = (stopwatch_stop - stopwatch_start) * 1e-9
 
@@ -118,33 +123,30 @@ class client:
         string = raw_output[0]['generated_text']
 
         # count tokens
-        tokenList = self.tokenizer.tokenize(string)
-        tokens = len(tokenList)
+        tokens = len(self.tokenize(string))
+        bytes = len(string)
 
         # compute statistics
-        tokenRate = round(tokens/duration, 3)
+        token_rate = round(tokens/duration, 3)
+        tpot = round(1e3 / token_rate, 3) # in ms
+        data_rate = round(bytes/duration, 3)
+        bit_rate = round(data_rate*8, 3)
 
-        print('-------- benchmark results --------')
-        print(f'Max. Token Window: 512\nTokens Generated: {tokens}\nMean Performance: {tokenRate}')
+        duration = round(duration, 3)
 
-    def cli (self, **pipe_kwargs) -> None:
-
-        '''
-        A command line inference loop.
-        Helpful to interfere with the model via command line.
-        '''
-
-        while True:
-
-            try:
-
-                inputs = input('Human: ')
-                print('\n' + self.name + ':', self.inference(inputs, **pipe_kwargs))
-
-            except KeyboardInterrupt:
-                
-                break
-    
+        print('\n-------- benchmark results --------')
+        print(
+            f'Device: {self.getDeviceName()}',
+            f'\nMax. Token Window: {token_length}',
+            f'\nTokens Generated: {tokens}',
+            f'\nBytes Generated: {bytes } bytes'
+            f'\nToken Rate: {token_rate} tokens/s', 
+            f'\nData Rate: {data_rate} bytes/s',
+            f'\nBit Rate: {bit_rate} bit/s',
+            f'\nTPOT: {tpot} ms/token',
+            f'\nTotal Gen. Time: {duration} s'
+        )
+        
     def chat (self, username: str='human', charTags: list[str]=['helpful'], show_duration: bool=True, **pipe_kwargs) -> None:
 
         '''
@@ -233,7 +235,50 @@ class client:
 
                 print_exc()
 
-    def inference (self, input_text:str, max_new_tokens:int=64, **pipe_kwargs) -> str:
+    def cli (self, **pipe_kwargs) -> None:
+
+        '''
+        A command line inference loop.
+        Helpful to interfere with the model via command line.
+        '''
+
+        while True:
+
+            try:
+
+                inputs = input('Human: ')
+                print('\n' + self.name + ':', self.inference(inputs, **pipe_kwargs))
+
+            except KeyboardInterrupt:
+                
+                break
+    
+    def getDeviceName (self) -> str:
+
+        '''
+        Returns the currently selected device name of CPU or GPU, 
+        depending on how the client was which device was set.
+        '''
+
+        if self.device == 'cpu':
+            try:
+                device = platform.processor()
+            except:
+                device = 'Unknown CPU'
+        else:
+            # gpu test if the SMIs are installed
+            try:
+                line_as_bytes = subprocess.check_output("rocm-smi --showproductname", shell=True)
+            except:
+                try:
+                    line_as_bytes = subprocess.check_output("nvidia-smi -L", shell=True)
+                except:
+                    line_as_bytes = b'Unknown GPU'
+            device = line_as_bytes.decode("utf-8")
+
+        return device
+    
+    def inference (self, input_text:str, max_new_tokens:int=64, **pipe_kwargs) -> list[dict[str,str]]:
 
         '''
         Inference of input through model using the transformer pipeline.
@@ -291,6 +336,14 @@ class client:
             self.device = 'cuda'
         else:
             self.device = 'cpu'
+
+    def tokenize (self, string: str) -> list[int]:
+
+        '''
+        Tokenizes a string via the currently loaded tokenizer.
+        '''
+
+        return self.tokenizer.encode(string)
 
     
 
