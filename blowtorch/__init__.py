@@ -58,12 +58,12 @@ class client:
             print('info: try loading transformers with assembled arguments ...')
 
             # default transformers
-            self.model = transformers.AutoModelForCausalLM.from_pretrained(**_kwargs)
+            self.model = transformers.AutoModelForCausalLM.from_pretrained(hugging_face_path, **_kwargs)
             # extract tokenizer
             self.tokenizer = transformers.AutoTokenizer.from_pretrained(hugging_face_path)
 
         except:
-
+            
             # ctransfomers for builds with GGUF weight format
             # load with input kwargs only, since gpu parameters are not known
             try:
@@ -74,7 +74,8 @@ class client:
                 self.tokenizer = ctransformers.AutoTokenizer.from_pretrained(self.model)
 
             except:
-
+                print('*** ERROR ***')
+                print_exc()
                 # for some models there is no specfic path
                 try:
 
@@ -96,9 +97,35 @@ class client:
 
         # create context object
         self.context = {}
+        self.max_bytes_context_length = 4096
 
         # create pipeline
         self.pipe = transformers.pipeline("text-generation", model=self.model, tokenizer=self.tokenizer)
+
+    def bench (self) -> None:
+
+        '''
+        A quick benchmark of the loaded model.
+        '''
+
+        print('info: start benchmark ...')
+        stopwatch_start = time_ns()
+        raw_output = self.inference('please write a generic long letter', 512)
+        stopwatch_stop = time_ns()
+        duration = (stopwatch_stop - stopwatch_start) * 1e-9
+
+        # unpack
+        string = raw_output[0]['generated_text']
+
+        # count tokens
+        tokenList = self.tokenizer.tokenize(string)
+        tokens = len(tokenList)
+
+        # compute statistics
+        tokenRate = round(tokens/duration, 3)
+
+        print('-------- benchmark results --------')
+        print(f'Max. Token Window: 512\nTokens Generated: {tokens}\nMean Performance: {tokenRate}')
 
     def cli (self, **pipe_kwargs) -> None:
 
@@ -122,20 +149,15 @@ class client:
 
         '''
         A text-to-text chat loop with context aggregator.
-        Will initialiaze a new chat with identifier in context.
+        Will initialize a new chat with identifier in context.
         Helpful to interfere with the model via command line.
         '''
-
-        max_bytes_context_length = 4096
 
         # generate unique chat identifier from ns timestamp
         while True:
             id = str(time_ns())
             if not id in self.context:
                 break
-        
-        # expand token size
-
         
         # initialize new context for chat
         self.context[id] = f"""A dialog, where a user interacts with {self.name}. {self.name} is {', '.join(charTags)}, and knows its own limits.\n{username}: Hello, {self.name}.\n{self.name}: Hello! How can I assist you today?\n"""
@@ -160,8 +182,8 @@ class client:
                 self.context[id] += formattedInput + '\n'
 
                 # extract inference payload from context
-                if len(self.context[id]) > max_bytes_context_length:
-                    inference_input = self.context[id][-max_bytes_context_length]
+                if len(self.context[id]) > self.max_bytes_context_length:
+                    inference_input = self.context[id][-self.max_bytes_context_length]
                 else:
                     inference_input = self.context[id]
 
@@ -202,8 +224,6 @@ class client:
 
                 # output
                 print(processed)
-                
-                
                 
             except KeyboardInterrupt:
                 
