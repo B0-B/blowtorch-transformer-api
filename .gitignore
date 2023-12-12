@@ -4,6 +4,9 @@
 *.[gG][gG][uU][fF]
 *.[wW][eE][iI][gG][hH][tT]
 
+# python cache
+**/__pycache__/
+
 # discard Llama2 cpu binaries
 llama-build/*
 
