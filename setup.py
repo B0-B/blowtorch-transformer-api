@@ -30,7 +30,6 @@ print('''\
 print(f' ---- blowtorch {version} setup ---- ')
 
 # choose cuda or rocm packages
-
 print(f'info: select {arg} packages.')
 
 # start the setup
@@ -46,7 +45,8 @@ setup(
         'transformers==4.31.0',
         'ctransformers==0.2.27',
         'accelerate==0.21.0',
-        'h5py==3.9.0'
+        'h5py==3.9.0',
+        'psutil'
     ]
 )
 

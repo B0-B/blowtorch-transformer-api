@@ -10,8 +10,10 @@ be palmyra-small (128M): https://huggingface.co/Writer/palmyra-small.
 import gc
 import re
 import torch
+import psutil
 import platform
 import transformers, ctransformers
+from os import getpid
 from traceback import print_exc
 from time import time_ns
 from string import punctuation
@@ -119,6 +121,9 @@ class client:
         stopwatch_stop = time_ns()
         duration = (stopwatch_stop - stopwatch_start) * 1e-9
 
+        # Get the memory usage of the current process
+        memory_usage = self.memoryUsage()
+
         # unpack
         string = raw_output[0]['generated_text']
 
@@ -131,13 +136,13 @@ class client:
         tpot = round(1e3 / token_rate, 3) # time per output token in ms
         data_rate = round(bytes/duration, 3)
         bit_rate = round(data_rate*8, 3)
-
         duration = round(duration, 3)
 
         # print results
         print('\n-------- benchmark results --------')
         print(
             f'Device: {self.getDeviceName()}',
+            f'\nRAM Usage: {memory_usage[0]} {memory_usage[1]}',
             f'\nMax. Token Window: {token_length}',
             f'\nTokens Generated: {tokens}',
             f'\nBytes Generated: {bytes } bytes'
@@ -287,6 +292,26 @@ class client:
 
         return self.pipe(input_text, max_new_tokens=max_new_tokens, **pipe_kwargs)
 
+    def memoryUsage (self) -> tuple[float, str]:
+
+        '''
+        Returns the memory used by the current process.
+        Will return a tuple (value, string suffix), the suffix is
+        from 'b', 'kb', 'mb', 'gb', 'tb', depending on size.
+        '''
+        
+        suffix = ['b', 'kb', 'mb', 'gb', 'tb']
+        process = psutil.Process(getpid())
+        memory_info = process.memory_info()
+        memory_usage = int(memory_info.rss) # in bytes
+        ind = 0
+        while memory_usage >= 100:
+            memory_usage /= 1024
+            ind += 1
+        memory_usage = round(memory_usage, 1)
+
+        return (memory_usage, suffix[ind])
+    
     def generate (self, input_text:str, max_new_tokens:int=128) -> str:
 
         '''
