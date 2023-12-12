@@ -106,7 +106,7 @@ class client:
         # create pipeline
         self.pipe = transformers.pipeline("text-generation", model=self.model, tokenizer=self.tokenizer)
 
-    def bench (self, token_length: int=128) -> None:
+    def bench (self, token_length: int=512) -> None:
 
         '''
         A quick benchmark of the loaded model.
@@ -128,12 +128,13 @@ class client:
 
         # compute statistics
         token_rate = round(tokens/duration, 3)
-        tpot = round(1e3 / token_rate, 3) # in ms
+        tpot = round(1e3 / token_rate, 3) # time per output token in ms
         data_rate = round(bytes/duration, 3)
         bit_rate = round(data_rate*8, 3)
 
         duration = round(duration, 3)
 
+        # print results
         print('\n-------- benchmark results --------')
         print(
             f'Device: {self.getDeviceName()}',
