@@ -12,7 +12,7 @@ html {
 }
 
 .left {
-    left: 20px;
+    justify-content: left;
 }
 
 .message-box {
@@ -23,8 +23,11 @@ html {
     margin-left: 10px;
     margin-right: 10px; */
     max-width: 60%;
+    min-width: 200px;
     height: auto;
     line-break: auto;
+    margin-left: 20px;
+    margin-right: 20px;
     /* position: absolute; */
 }
 
@@ -38,8 +41,12 @@ html {
     position: relative;
 }
 
+#msg-input-field {
+
+}
+
 .right {
-    right: 20px
+    justify-content: flex-end;
 }
 
 .chat-input {
