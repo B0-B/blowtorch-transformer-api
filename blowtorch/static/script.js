@@ -11,6 +11,32 @@ createApp({
         incrementCount() {
             this.count++
         },
+        messageBox (msg, side) {
+
+            const chatWindow = document.getElementById('chat-window');
+            
+            // generate message box wrapper
+            const boxWrapper = document.createElement('span');
+            boxWrapper.classList.add('message-box-wrapper');
+            
+            // generate message box
+            const messageBox = document.createElement('span');
+            messageBox.classList.add('message-box');
+            
+            // decide which side
+            if (side == 'l') {
+                messageBox.classList.add('left')
+            } else if (side == 'r') {
+                messageBox.classList.add('right')
+            }
+
+            // add content
+            messageBox.innerHTML = msg;
+            
+            boxWrapper.appendChild(messageBox);
+            chatWindow.appendChild(boxWrapper)
+            
+        },
         request (options, path, json=true) {
             return new Promise(function (resolve, reject) {
                 var xhr = new XMLHttpRequest(); 
@@ -35,6 +61,14 @@ createApp({
 
     },
     mounted () {
-        this.request({'data':[1,2,3]}, '/')
+        try {
+            // this.request({'data':[1,2,3]}, '/');
+            console.log('mounted.');
+            this.messageBox('This is a test', 'l');
+            this.messageBox('This is another test', 'r');
+            
+        } catch (error) {
+            console.log('mount hook error:', error)
+        }
     }
 }).mount('#vue-app')
