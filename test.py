@@ -1,20 +1,5 @@
-import subprocess as sp
-import torch
-import os
+from blowtorch import webUI, client
 
-def get_gpu_memory(id: int=0) -> int:
+cl = client('llama-2-7b-chat.Q2_K.gguf', 'TheBloke/Llama-2-7B-Chat-GGUF', device='cpu', model_type="llama")
 
-    '''
-    Trys to get the currently allocated memory size by torch.
-    https://stackoverflow.com/a/58216793
-    '''
-
-    try:
-        vram_usage = torch.cuda.memory_allocated(0)
-    except:
-        vram_usage = 0
-
-    
-    return memory_free_values
-
-print(get_gpu_memory())
+webUI()

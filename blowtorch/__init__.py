@@ -9,19 +9,32 @@ be palmyra-small (128M): https://huggingface.co/Writer/palmyra-small.
 
 import gc
 import re
-import torch
-import psutil
-import platform
-import transformers, ctransformers
-from os import getpid
-from traceback import print_exc
+import json
 from time import time_ns
 from string import punctuation
 import warnings
+
+# system
+import psutil
 import subprocess
+import platform
+from traceback import print_exc
+from pathlib import Path, PosixPath
+from os import getpid, chdir, getcwd
+
+# ML
+import torch
+import transformers, ctransformers
+
+# server
+import _socket
+import socketserver
+from http.server import SimpleHTTPRequestHandler
 
 
+__root__ = Path(__file__).parent
 warnings.filterwarnings("ignore")
+
 
 class client:
 
@@ -401,11 +414,84 @@ class client:
 
         return self.tokenizer.encode(string)
 
+__client__: client
+
+class handler (SimpleHTTPRequestHandler):
+
+    # def __init__(self, request, client_address, server, *, directory: str | None = None, _client:client|None=None, _root:Path|None=None) -> None:
+
+    #     super().__init__(request, client_address, server, directory=directory)
+
+    #     self.client = _client
+    #     self.root = _root
     
+    def do_GET(self):
+        # if self.path == '/':
+            
+        #     # self.path = str(__root__.joinpath('static').absolute())
+        #     print(self.path)
+        return SimpleHTTPRequestHandler.do_GET(self)
+        # self.send_response(200)
+        # self.send_header('Content-type', 'text/html')
+        # self.end_headers()
+        # self.wfile.write(b'Hello, world!')
+    
+    def do_POST(self):
+
+        response = {'data': {}, 'errors': []}
+
+        self.send_response(200)
+        self.send_header('Content-type', 'application/json')
+        self.end_headers()
+        
+        # unpack the request
+        content_length = int(self.headers['Content-Length'])
+        post_data = self.rfile.read(content_length)
+        data = json.loads(post_data.decode('utf-8'))
+
+        print('data received:', data)
+
+        self.wfile.write(json.dumps(response).encode('utf-8'))
+
+class webUI ():
+
+    '''
+    Spawns a blowtorch server with a web UI.
+    _client:    client instance
+    dir:        path to static directory
+    host:       host name
+    port:       TCP port
+    '''
+
+    def __init__(self, _client: client, dir: str|Path=__root__.joinpath('static/'), host: str='localhost', port: int=3000) -> None:
+        
+        self.host = host
+        self.port = port
+        self.client = _client
+
+        # override global client
+        __client__ = self.client
+
+        # change current wdir for socketserver
+        origin = getcwd()
+        chdir(dir)
+        try:
+            self.startServer()
+        except:
+            print_exc()
+        finally:
+            chdir(origin)
+
+    def startServer (self):
+
+        with socketserver.TCPServer((self.host, self.port), handler) as httpd:
+            print("serving blowtorch web UI at port", self.port)
+            httpd.serve_forever()
+
 
 if __name__ == '__main__':
 
-    pass
+    webUI('')
 
     # client(device='cpu').cli() # run small palmyra model for testing
     # client(hugging_face_path='TheBloke/Llama-2-7B-Chat-GGML', device='cpu', model_type="llama").cli(max_new_tokens=64, do_sample=True, temperature=0.8, repetition_penalty=1.1)

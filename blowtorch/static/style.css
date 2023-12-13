@@ -1,0 +1,36 @@
+.chat-window {
+    height: 400px;
+    width: 100%;
+    padding: 10px;
+    border: 1px solid black;
+    overflow-y: scroll;
+}
+
+.chat-message {
+    margin-bottom: 10px;
+    padding: 10px;
+    max-width: 400px;
+    line-break: auto;
+    background-color: rgb(109, 188, 185);
+}
+
+.left {
+    display: flex;
+    align-items: left;
+}
+
+.right {
+    display: flex;
+    align-items: right;
+}
+
+.chat-input {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+.chat-input input {
+    flex-grow: 1;
+    margin-right: 10px;
+}

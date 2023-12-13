@@ -10,7 +10,6 @@
 # discard Llama2 cpu binaries
 llama-build/*
 
-
 # ignore build files
 dist/
 build/
