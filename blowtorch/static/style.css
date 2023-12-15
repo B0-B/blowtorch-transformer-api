@@ -1,6 +1,7 @@
 html {
     padding: 0;
-    margin: 0
+    margin: 0;
+    font-family: Helvetica, sans-serif;
 }
 #chat-window {
     height: 400px;
@@ -28,6 +29,7 @@ html {
     line-break: auto;
     margin-left: 20px;
     margin-right: 20px;
+    font-size: 10pt;
     /* position: absolute; */
 }
 

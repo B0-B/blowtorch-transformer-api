@@ -118,6 +118,10 @@ class client:
         self.context = {}
         self.max_bytes_context_length = 4096
 
+        # kwargs config, which can be pre-set before calling inference, cli or chat
+        # use setConfig to define inference kwargs
+        self.config = None
+
         # create pipeline
         self.pipe = transformers.pipeline("text-generation", model=self.model, tokenizer=self.tokenizer)
 
@@ -168,13 +172,33 @@ class client:
             f'\nTotal Gen. Time: {duration} s'
         )
         
-    def chat (self, username: str='human', charTags: list[str]=['helpful'], show_duration: bool=True, **pipe_kwargs) -> None:
+    def chat (self, username: str='human', char_tags: list[str]=['helpful'], show_duration: bool=True, **pipe_kwargs) -> None:
 
         '''
         A text-to-text chat loop with context aggregator.
         Will initialize a new chat with identifier in context.
         Helpful to interfere with the model via command line.
+
+        If setConfig was called priorly, pipe_kwargs will be overriden.
+        If setConfig includes the method kwargs it will override as well.
         '''
+
+        # clarify kwargs
+        if self.config:
+            conf = self.config
+            # override standard kwargs with existing 
+            # config value and remove from config
+            if 'username' in conf:
+                username = conf['username']
+                conf.pop('username')
+            if 'char_tags' in conf:
+                char_tags = conf['char_tags']
+                conf.pop('char_tags')
+            if 'show_duration' in conf:
+                show_duration = conf['show_duration']
+                conf.pop('show_duration')
+            # override pipe kwargs with left kwargs in config
+            pipe_kwargs = conf
 
         # generate unique chat identifier from ns timestamp
         while True:
@@ -183,7 +207,7 @@ class client:
                 break
         
         # initialize new context for chat
-        self.context[id] = f"""A dialog, where a user interacts with {self.name}. {self.name} is {', '.join(charTags)}, and knows its own limits.\n{username}: Hello, {self.name}.\n{self.name}: Hello! How can I assist you today?\n"""
+        self.context[id] = f"""A dialog, where a user interacts with {self.name}. {self.name} is {', '.join(char_tags)}, and knows its own limits.\n{username}: Hello, {self.name}.\n{self.name}: Hello! How can I assist you today?\n"""
         
         while True:
 
@@ -194,7 +218,7 @@ class client:
                 # new input from user
                 inputs += input(f'{username}: ')
 
-                # prepend former context
+                # format input
                 formattedInput = f'{username}: {inputs}'
 
                 # pre-processing
@@ -219,7 +243,6 @@ class client:
                     stopwatch_stop = time_ns()
                     duration_in_seconds = round((stopwatch_stop - stopwatch_start)*1e-9, 2)
 
-                
                 # post-processing & format
                 processed = raw_output[0]['generated_text']  # unpack
                 processed = processed.replace(inference_input, '').replace('\n\n', '') # remove initial input and empty lines
@@ -244,6 +267,8 @@ class client:
                     print('\n\n*** Reset Conversation ***\n\n')
 
                     self.reset()
+
+                    self.context[id] = f"""A dialog, where a user interacts with {self.name}. {self.name} is {', '.join(char_tags)}, and knows its own limits.\n{username}: Hello, {self.name}.\n{self.name}: Hello! How can I assist you today?\n"""
 
                 # output
                 print(processed)
@@ -274,6 +299,76 @@ class client:
                 
                 break
     
+    def contextInference (self, input_text:str, sessionId: int=0, username: str='human', char_tags: list[str]=['helpful'], **pipe_kwargs):
+
+        '''
+        Mimicks the chat method, but returns the output.
+        Used for webUI inference, will behave the same as chat method.
+
+        If setConfig was call priorly kwargs, the pre-defined kwargs will be overriden.
+        '''
+
+        # clarify kwargs
+        if self.config:
+            conf = self.config
+            # override standard kwargs with existing 
+            # config value and remove from config
+            if 'username' in conf:
+                username = conf['username']
+                conf.pop('username')
+            if 'char_tags' in conf:
+                char_tags = conf['char_tags']
+                conf.pop('char_tags')
+            # override pipe kwargs with left kwargs in config
+            pipe_kwargs = conf
+
+        # initialize new context by registering sessionId in context object
+        if not sessionId in self.context:
+            self.context[sessionId] = f"""A dialog, where a user interacts with {self.name}. {self.name} is {', '.join(char_tags)}, and knows its own limits.\n{username}: Hello, {self.name}.\n{self.name}: Hello! How can I assist you today?\n"""
+
+        # format input
+        formattedInput = f'{username}: {input_text}'
+
+        # pre-processing
+        if formattedInput[-1] not in punctuation:
+            formattedInput += '. '
+        
+        # append formatted input to context
+        self.context[sessionId] += formattedInput + '\n'
+
+        # extract inference payload from context
+        if len(self.context[sessionId]) > self.max_bytes_context_length:
+            inference_input = self.context[sessionId][-self.max_bytes_context_length]
+        else:
+            inference_input = self.context[sessionId]
+
+        # inference -> get raw string output
+        # print('inference input', inference_input)
+        raw_output = self.inference(inference_input, **pipe_kwargs)
+
+        # post-processing & format
+        processed = raw_output[0]['generated_text']  # unpack
+        processed = processed.replace(inference_input, '').replace('\n\n', '') # remove initial input and empty lines
+        for paragraph in processed.split('\n'): # extract the first answer and disregard further generations
+            if f'{username}:' in paragraph[:3]:
+                # processed = paragraph
+                break
+            processed += '\n'+paragraph
+        processed = processed.split(username+': ')[0] # remove possible answers (as the ai continues otherwise by improvising the whole dialogue)
+        
+        # check if transformer has lost path from conversation
+        if not f'{self.name}:' in processed:
+            print('\n\n*** Reset Conversation ***\n\n')
+            processed = f"{self.name}: Let's start a new chat!"
+            self.reset()
+            self.context[sessionId] = f"""A dialog, where a user interacts with {self.name}. {self.name} is {', '.join(char_tags)}, and knows its own limits.\n{username}: Hello, {self.name}.\n{self.name}: Hello! How can I assist you today?\n"""
+            return processed
+
+        # append to context
+        self.context[sessionId] += processed + '\n'
+
+        return processed
+
     def getDeviceName (self) -> str:
 
         '''
@@ -395,6 +490,19 @@ class client:
         torch.cuda.empty_cache()
         gc.collect()
 
+    def setConfig (self, **kwargs) -> None:
+
+        '''
+        An alternative settings method for transformer kwargs.
+        The provided kwargs will be forwarded to inference and chat.
+        Usage:
+        _client = client(...)
+        _client.setConfig(kwargs...)
+        _client.chat() # no kwargs needed anymore
+        '''
+
+        self.config = kwargs
+
     def setDevice (self, device: str) -> None:
 
         '''
@@ -414,29 +522,27 @@ class client:
 
         return self.tokenizer.encode(string)
 
-__client__: client
-
 class handler (SimpleHTTPRequestHandler):
 
-    # def __init__(self, request, client_address, server, *, directory: str | None = None, _client:client|None=None, _root:Path|None=None) -> None:
+    '''
+    blowtorch http handler for web serving and TCP interface.
+    '''
 
-    #     super().__init__(request, client_address, server, directory=directory)
-
-    #     self.client = _client
-    #     self.root = _root
+    __client__: client
     
     def do_GET(self):
-        # if self.path == '/':
-            
-        #     # self.path = str(__root__.joinpath('static').absolute())
-        #     print(self.path)
+        
+        '''
+        Load static web page.
+        '''
+
         return SimpleHTTPRequestHandler.do_GET(self)
-        # self.send_response(200)
-        # self.send_header('Content-type', 'text/html')
-        # self.end_headers()
-        # self.wfile.write(b'Hello, world!')
     
     def do_POST(self):
+
+        '''
+        Chat API implementation.
+        '''
 
         response = {'data': {}, 'errors': []}
 
@@ -451,7 +557,47 @@ class handler (SimpleHTTPRequestHandler):
 
         print('data received:', data)
 
-        self.wfile.write(json.dumps(response).encode('utf-8'))
+        # check if package is consistent
+        if not data['sessionId']:
+
+            err = 'No sessionId provided!'
+            response['errors'].append(err)
+            print(err)
+
+        elif not data['message']:
+            
+            err = 'No message provided in request!'
+            response['errors'].append(err)
+            print(err)
+
+        elif not (data['maxNewTokens'] and type(data['maxNewTokens']) is int and data['maxNewTokens'] > 64):
+            
+            err = 'maxNewTokens must be >=64!'
+            print(err)
+            response['errors'].append(err)
+        
+        else:
+
+            # extract session id so the client can locate the context
+            sessionId = data['sessionId'] 
+            
+            # do inference
+            message = data['message']
+            maxNewTokens = data['maxNewTokens']
+            output = self.__client__.contextInference(
+                sessionId,
+                message, 
+                max_new_tokens=maxNewTokens,
+            )
+
+            # add output to data
+            response['data']['message'] = output
+
+        # prepare response
+        encoded = json.dumps(response).encode('utf-8')
+
+        # send
+        self.wfile.write(encoded)
 
 class webUI ():
 
@@ -467,10 +613,10 @@ class webUI ():
         
         self.host = host
         self.port = port
+        
+        # override global client for the handler 
         self.client = _client
-
-        # override global client
-        __client__ = self.client
+        handler.__client__ = self.client
 
         # change current wdir for socketserver
         origin = getcwd()
@@ -485,7 +631,7 @@ class webUI ():
     def startServer (self):
 
         with socketserver.TCPServer((self.host, self.port), handler) as httpd:
-            print("serving blowtorch web UI at port", self.port)
+            print(f'serving blowtorch web UI at http://{self.host}:{self.port}')
             httpd.serve_forever()
 
 
@@ -505,7 +651,7 @@ if __name__ == '__main__':
     #            context_length = 6000
     # ).chat(
     #     max_new_tokens=128, 
-    #     charTags=['helpful', 'cheeky', 'kind', 'obedient', 'honest'], 
+    #     char_tags=['helpful', 'cheeky', 'kind', 'obedient', 'honest'], 
     #     do_sample=False, 
     #     temperature=0.8, 
     #     repetition_penalty=1.1
@@ -519,7 +665,7 @@ if __name__ == '__main__':
     #            model_type="llama"
     # ).chat(
     #     max_new_tokens=128, 
-    #     charTags=['funnily impersonates Arnold Schwarzenegger', 'joking', 'randomly stating facts about his career', 'hectic'], 
+    #     char_tags=['funnily impersonates Arnold Schwarzenegger', 'joking', 'randomly stating facts about his career', 'hectic'], 
     #     do_sample=False, 
     #     temperature=0.8, 
     #     repetition_penalty=1.1

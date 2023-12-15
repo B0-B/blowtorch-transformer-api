@@ -15,7 +15,7 @@ client('llama-2-7b-chat.Q2_K.gguf',
            context_length = 6000
 ).chat(
     max_new_tokens=128, 
-    charTags=[
+    char_tags=[
         'imressionating Arnold Schwarzenegger',
         'with thick austrian accent', 
         'often answers with famous quotes from his movies',

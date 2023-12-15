@@ -127,7 +127,7 @@ client('llama-2-7b-chat.Q2_K.gguf',
     model_type="llama"
 ).chat(
     max_new_tokens=128, 
-    charTags=['funnily impersonates Arnold Schwarzenegger', 'joking', 'randomly stating facts about his career', 'hectic'], 
+    char_tags=['funnily impersonates Arnold Schwarzenegger', 'joking', 'randomly stating facts about his career', 'hectic'], 
     do_sample=False, 
     temperature=0.8, 
     repetition_penalty=1.1

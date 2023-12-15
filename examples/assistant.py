@@ -15,7 +15,7 @@ client('llama-2-7b-chat.Q2_K.gguf',
            context_length = 6000
 ).chat(
     max_new_tokens=512, 
-    charTags=[
+    char_tags=[
         'polite',
         'focused and helpful',
         'expert in programing',
