@@ -1,12 +1,12 @@
 const { createApp, ref } = Vue
 
-createApp({
+const app = createApp({
     data () {
         return {
             message: 'Hello Vue!',
             context: {},
             count: 0,
-            inputFillSpeed: 2.0,
+            inputFillSpeed: 1.2,
             maxNewTokens: 128,
             sessionId: null,
             
@@ -128,6 +128,7 @@ createApp({
                 return
             }
 
+            // extract payload from input field
             const inputField = document.getElementById('msg-input-field');
             const payload = inputField.value;
             inputField.value = '';
@@ -148,14 +149,10 @@ createApp({
             // spawn an empty message box
             const msgBox = this.messageBox('', 'l');
 
-            // add a custom event listener on height change of message box
-            // scroll to bottom
+            // add a custom event listener which scrolls chat to bottom
+            // when a message box 
             let resizeObserver = new ResizeObserver(entries => {
                 this.scrollToBottom();
-                // for (let entry of entries) {
-                //     console.log('Height:', entry.contentRect.height);
-                //     // You can add your code here to handle the height change
-                // }
             });
             resizeObserver.observe(msgBox);
             
@@ -179,35 +176,38 @@ createApp({
                 const char = answer[i];
                 msgBox.innerHTML += char;
                 await this.sleep(.1 / this.inputFillSpeed);
-                
-                // scroll to bottom while typing
-                // if (ind % 10 == 0){
-                //     ind = 0;
-                    
-                //     chatWindow.scrollTop = chatWindow.scrollHeight;
-                // }
-                // ind += 1;
-                
             }
+
+            // stop event listener for message box
+            resizeObserver.unobserve(msgBox);
             
         }
 
     },
     async mounted () {
+
         try {
+
             console.log('mounting.');
+
             // generate session id, a unique ientifier for server-side client
             this.sessionId = await this.generateSessionId();
 
+            const inputField = document.getElementById('msg-input-field')
+
+            // bind send button to ENTER key
+            let submitFunction = this.submit;
+            inputField.addEventListener('keydown', function(event) {
+                // Check if the key pressed was 'Enter'
+                if (event.key === 'Enter') {
+                    console.log('submit ...');
+                    submitFunction()
+                }
+            });
+
             // this.request({'data':[1,2,3]}, '/');
             console.log('mounted.');
-            this.messageBox('To make sense of it, try to remove minimum height & height -if it’s there, or give it height: 0 - on the parent, then add some height to this absolute-positioned child and see what happens. My guess now you will see the parent’s gone (u cant see it because it has no height) & u only see the child, or u see nothing at all - that is, if the parent is assigned with property', 'l');
-            this.messageBox('This is another test', 'r');
-            this.messageBox('This is another test', 'r')
-            this.messageBox('This is another test', 'r')
-            this.messageBox('This is another test', 'r')
-            this.messageBox('This is another test', 'r')
-            this.messageBox('To make sense of it, try to remove minimum height & height -if it’s there, or give it height: 0 - on the parent, then add some height to this absolute-positioned child and see what happens. My guess now you will see the parent’s gone (u cant see it because it has no height) & u only see the child, or u see nothing at all - that is, if the parent is assigned with property', 'l');
+            this.messageBox("I am an AI assistant, how may I help you?", 'l');
 
         } catch (error) {
             console.log('mount hook error:', error)
@@ -219,7 +219,9 @@ createApp({
                 messageBox.innerHTML = ''
             }
             messageBox.innerHTML += '.';
-            await this.sleep(.5)
+            await this.sleep(.05)
         }
     }
-}).mount('#vue-app')
+})
+
+app.mount('#vue-app')

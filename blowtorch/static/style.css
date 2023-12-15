@@ -5,7 +5,8 @@ html {
 }
 
 #chat-window {
-    height: 400px;
+    min-height: 500px;
+    height: 61.8%;
     width: 100%;
     display: flex;
     flex-direction: column;
