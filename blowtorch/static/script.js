@@ -6,8 +6,10 @@ createApp({
             message: 'Hello Vue!',
             context: {},
             count: 0,
+            inputFillSpeed: 2.0,
             maxNewTokens: 128,
             sessionId: null,
+            
             submitEnabled: true
         }
     },
@@ -42,6 +44,12 @@ createApp({
         },
         messageBox (msg, side) {
 
+            /* 
+            Creates a message box in chat window.
+            'side' determines the side 'l' or 'r' 
+            for left of right, resp. 
+            */
+
             const chatWindow = document.getElementById('chat-window');
             
             // generate message box wrapper
@@ -54,9 +62,11 @@ createApp({
             
             // decide which side
             if (side == 'l') {
-                boxWrapper.classList.add('left')
+                boxWrapper.classList.add('left');
+                messageBox.classList.add('gray')
             } else if (side == 'r') {
-                boxWrapper.classList.add('right')
+                boxWrapper.classList.add('right');
+                messageBox.classList.add('green')
             }
 
             // add content
@@ -66,7 +76,7 @@ createApp({
             chatWindow.appendChild(boxWrapper);
 
             // scroll to bottom
-            chatWindow.scrollTop = chatWindow.scrollHeight;
+            this.scrollToBottom();
 
             return messageBox
             
@@ -92,7 +102,26 @@ createApp({
                 xhr.send(JSON.stringify(options)); 
             });
         },
+        async scrollToBottom () {
+            /*
+            Scrolls chat window to bottom.
+            */
+            let chatWindow = document.getElementById('chat-window');
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        },
+        sleep: function (seconds) {
+            return new Promise(function(resolve) {
+                setTimeout(function() {
+                    resolve(0);
+                }, 1000*seconds);
+            });
+        },
         async submit () {
+
+            /*
+            Submits message to server and awaits response.
+            Will create message boxes in chat window appropriately.
+            */
             
             // skip if the submit is disabled 
             if (!this.submitEnabled) {
@@ -106,23 +135,60 @@ createApp({
             // build message box for chat window
             this.messageBox(payload, 'r');
             
-            console.log('test 1')
             // prepare package for request
             let pkg = {
                 sessionId: this.sessionId,
                 message: payload,
                 maxNewTokens: this.maxNewTokens
             }
-            console.log('test 2')
+
+            // disable submit function
+            this.submitEnabled = false;
+
+            // spawn an empty message box
+            const msgBox = this.messageBox('', 'l');
+
+            // add a custom event listener on height change of message box
+            // scroll to bottom
+            let resizeObserver = new ResizeObserver(entries => {
+                this.scrollToBottom();
+                // for (let entry of entries) {
+                //     console.log('Height:', entry.contentRect.height);
+                //     // You can add your code here to handle the height change
+                // }
+            });
+            resizeObserver.observe(msgBox);
+            
+            // make a wait animation in message box
+            //this.waitAnimation(msgBox); // will terminate whe 
 
             // request a response from API (this is most time consuming)
             const response = await this.request(pkg, '/')
+
+            // enable submit functionality again
+            this.submitEnabled = true;
             
             console.log('response', response)
-
+            // derive answer payload
             const answer = response.data.message;
-
-            this.messageBox(answer, 'l');
+            
+            // fill into message box
+            msgBox.innerHTML = '';
+            ind = 0
+            for (let i = 0; i < answer.length; i++) {
+                const char = answer[i];
+                msgBox.innerHTML += char;
+                await this.sleep(.1 / this.inputFillSpeed);
+                
+                // scroll to bottom while typing
+                // if (ind % 10 == 0){
+                //     ind = 0;
+                    
+                //     chatWindow.scrollTop = chatWindow.scrollHeight;
+                // }
+                // ind += 1;
+                
+            }
             
         }
 
@@ -145,6 +211,15 @@ createApp({
 
         } catch (error) {
             console.log('mount hook error:', error)
+        }
+    },
+    async waitAnimation (messageBox) {
+        while (!this.submitEnabled) {
+            if (messageBox.innerHTML == '...'){
+                messageBox.innerHTML = ''
+            }
+            messageBox.innerHTML += '.';
+            await this.sleep(.5)
         }
     }
 }).mount('#vue-app')

@@ -14,6 +14,9 @@ cl.setConfig(
         'obedient'
     ], 
     username='Human',
+    do_sample=True, 
+    temperature=0.8, 
+    repetition_penalty=1.1
 )
 
 webUI(cl)

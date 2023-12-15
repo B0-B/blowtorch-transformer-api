@@ -3,6 +3,7 @@ html {
     margin: 0;
     font-family: Helvetica, sans-serif;
 }
+
 #chat-window {
     height: 400px;
     width: 100%;
@@ -12,17 +13,27 @@ html {
     overflow-y: scroll;
 }
 
+.green {
+    background-color: rgb(109, 158, 188);
+}
+
+.gray {
+    background-color: rgb(37, 40, 43);
+}
+
 .left {
     justify-content: left;
+    
 }
 
 .message-box {
-    background-color: rgb(109, 188, 185);
+    
     top: 0;
     padding: 5px;
     /* margin-top: 10px;
     margin-left: 10px;
     margin-right: 10px; */
+    color:white;
     max-width: 60%;
     min-width: 200px;
     height: auto;

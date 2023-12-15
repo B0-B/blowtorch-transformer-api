@@ -369,6 +369,28 @@ class client:
 
         return processed
 
+    def generate (self, input_text:str, max_new_tokens:int=128) -> str:
+
+        '''
+        Generates output directly from model.
+        '''
+
+        inputs = self.tokenizer(input_text, return_tensors="pt")
+
+        # pipe inputs to correct device
+        inputs = inputs.to(self.device)
+
+        # generate some outputs 
+        outputs = self.model.generate(**inputs, pad_token_id=self.tokenizer.eos_token_id, max_new_tokens=max_new_tokens)
+
+        # decode tensor object -> output string 
+        outputString = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
+
+        # remove the prepended input
+        outputString = outputString.replace(input_text, '')
+
+        return outputString
+
     def getDeviceName (self) -> str:
 
         '''
@@ -426,52 +448,6 @@ class client:
 
         return (memory_usage, suffix[ind])
     
-    def vramUsage (self) -> tuple[float, str]:
-
-        '''
-        Returns the current vRAM usage.
-        '''
-
-        suffix = ['b', 'kb', 'mb', 'gb', 'tb']
-
-        try:
-            # get the vRAM allocated by torch
-            vram_usage = torch.cuda.memory_allocated(0)
-        except:
-            # set to zero if torch is not compiled for gpu
-            vram_usage = 0
-        
-        # select correct suffix
-        ind = 0
-        while vram_usage >= 100:
-            vram_usage /= 1024
-            ind += 1
-        vram_usage = round(vram_usage, 1)
-
-        return (vram_usage, suffix[ind])
-
-    def generate (self, input_text:str, max_new_tokens:int=128) -> str:
-
-        '''
-        Generates output directly from model.
-        '''
-
-        inputs = self.tokenizer(input_text, return_tensors="pt")
-
-        # pipe inputs to correct device
-        inputs = inputs.to(self.device)
-
-        # generate some outputs 
-        outputs = self.model.generate(**inputs, pad_token_id=self.tokenizer.eos_token_id, max_new_tokens=max_new_tokens)
-
-        # decode tensor object -> output string 
-        outputString = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
-
-        # remove the prepended input
-        outputString = outputString.replace(input_text, '')
-
-        return outputString
-
     def reset (self) -> None:
 
         '''
@@ -489,7 +465,7 @@ class client:
         # clear the cache from device
         torch.cuda.empty_cache()
         gc.collect()
-
+    
     def setConfig (self, **kwargs) -> None:
 
         '''
@@ -521,6 +497,30 @@ class client:
         '''
 
         return self.tokenizer.encode(string)
+    
+    def vramUsage (self) -> tuple[float, str]:
+
+        '''
+        Returns the current vRAM usage.
+        '''
+
+        suffix = ['b', 'kb', 'mb', 'gb', 'tb']
+
+        try:
+            # get the vRAM allocated by torch
+            vram_usage = torch.cuda.memory_allocated(0)
+        except:
+            # set to zero if torch is not compiled for gpu
+            vram_usage = 0
+        
+        # select correct suffix
+        ind = 0
+        while vram_usage >= 100:
+            vram_usage /= 1024
+            ind += 1
+        vram_usage = round(vram_usage, 1)
+
+        return (vram_usage, suffix[ind])
 
 class handler (SimpleHTTPRequestHandler):
 
@@ -585,8 +585,8 @@ class handler (SimpleHTTPRequestHandler):
             message = data['message']
             maxNewTokens = data['maxNewTokens']
             output = self.__client__.contextInference(
-                sessionId,
                 message, 
+                sessionId=sessionId,
                 max_new_tokens=maxNewTokens,
             )
 
