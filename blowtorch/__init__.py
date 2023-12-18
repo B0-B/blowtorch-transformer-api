@@ -459,8 +459,11 @@ class client:
             # transformers
             self.model.reset_parameters()
         except:
-            # ctransformers
-            self.model.reset()
+            try:
+                # ctransformers
+                self.model.reset()
+            except:
+                pass
 
         # clear the cache from device
         torch.cuda.empty_cache()

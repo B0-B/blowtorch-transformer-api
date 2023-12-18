@@ -6,16 +6,23 @@ const app = createApp({
             message: 'Hello Vue!',
             context: {},
             count: 0,
-            inputFillSpeed: 1.2,
-            maxNewTokens: 128,
+            inputFillSpeed: 1.5,
+            maxNewTokens: 256,
             sessionId: null,
-            
             submitEnabled: true
         }
     },
     methods: {
+        async formatMessage (message) {
+            /*
+            Formats a message into hmtl compliant format.
+            */
 
-        async generateSessionId() {
+            formatted = message.split('\n').join('<br>');
+
+            return '<p>'+formatted+'</p>'
+        },
+        async generateSessionId () {
 
             /*
             Generates a unique session identifier.
@@ -132,6 +139,8 @@ const app = createApp({
             const inputField = document.getElementById('msg-input-field');
             const payload = inputField.value;
             inputField.value = '';
+
+            
             
             // build message box for chat window
             this.messageBox(payload, 'r');
@@ -157,7 +166,7 @@ const app = createApp({
             resizeObserver.observe(msgBox);
             
             // make a wait animation in message box
-            //this.waitAnimation(msgBox); // will terminate whe 
+            this.waitAnimation(msgBox); // will terminate when submit is enabled
 
             // request a response from API (this is most time consuming)
             const response = await this.request(pkg, '/')
@@ -168,12 +177,12 @@ const app = createApp({
             console.log('response', response)
             // derive answer payload
             const answer = response.data.message;
+            const formattedAnswer = await this.formatMessage(answer);
             
             // fill into message box
             msgBox.innerHTML = '';
-            ind = 0
-            for (let i = 0; i < answer.length; i++) {
-                const char = answer[i];
+            for (let i = 0; i < formattedAnswer.length; i++) {
+                const char = formattedAnswer[i];
                 msgBox.innerHTML += char;
                 await this.sleep(.1 / this.inputFillSpeed);
             }
@@ -181,6 +190,21 @@ const app = createApp({
             // stop event listener for message box
             resizeObserver.unobserve(msgBox);
             
+        },
+        async waitAnimation (messageBox) {
+            console.log('ani 0')
+            while (!this.submitEnabled) {
+                console.log('ani 1')
+                if (messageBox.innerHTML == '...') {
+                    console.log('ani 2')
+                    messageBox.innerHTML = '.'
+                } else {
+                    console.log('ani 3')
+                    messageBox.innerHTML += '.';
+                }
+                console.log('ani 4')
+                await this.sleep(1)
+            }
         }
 
     },
@@ -212,16 +236,9 @@ const app = createApp({
         } catch (error) {
             console.log('mount hook error:', error)
         }
-    },
-    async waitAnimation (messageBox) {
-        while (!this.submitEnabled) {
-            if (messageBox.innerHTML == '...'){
-                messageBox.innerHTML = ''
-            }
-            messageBox.innerHTML += '.';
-            await this.sleep(.05)
-        }
+
     }
+    
 })
 
 app.mount('#vue-app')
