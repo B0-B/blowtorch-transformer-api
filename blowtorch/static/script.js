@@ -17,10 +17,10 @@ const app = createApp({
             /*
             Formats a message into hmtl compliant format.
             */
+            return message
+            // formatted = message.split('\n').join('<br>');
 
-            formatted = message.split('\n').join('<br>');
-
-            return '<p>'+formatted+'</p>'
+            // return '<p>'+formatted+'</p>'
         },
         async generateSessionId () {
 
