@@ -14,6 +14,19 @@ html {
     overflow-y: scroll;
 }
 
+.settings-container {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.setting-row {
+    width: 50%;
+}
+
+.setting-row > label, input {
+    width: 50%
+}
+
 .green {
     background-color: rgb(109, 158, 188);
 }
@@ -63,13 +76,24 @@ html {
     justify-content: flex-end;
 }
 
-.chat-input {
+.chat-input-section {
     display: flex;
     flex-direction: row;
     align-items: center;
 }
 
-.chat-input input {
+.chat-input-section input {
     flex-grow: 1;
     margin-right: 10px;
+}
+
+#settings-section {
+    margin-top: 50px;
+    min-height: 300px;
+    width: 100%;
+    display: flex;
+    top:50px;
+    bottom: 0;
+    flex-direction: column;
+    border: 1px solid black;
 }

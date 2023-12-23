@@ -9,6 +9,10 @@ const app = createApp({
             inputFillSpeed: 1.5,
             maxNewTokens: 256,
             sessionId: null,
+            settings: { 
+                maxNewTokens: 128,
+                contextLength: 6000
+            },
             submitEnabled: true
         }
     },

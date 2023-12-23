@@ -12,10 +12,25 @@
     <div id="vue-app">
         <div id="chat-window">
         </div>
-        <div class="chat-input">
-            <input id="msg-input-field" type="text" placeholder="Type your message here...">
-            <button @click="submit">Send</button>
+        <div id="input-wrapper">
+            <div class="chat-input-section">
+                <input id="msg-input-field" type="text" placeholder="Type your message here...">
+                <button @click="submit">Send</button>
+            </div>
+            <template id="settings-section">
+                <div class="settings-container">
+                    <div class="setting-row">
+                        <label for="inputOne">Max. New Tokens</label>
+                        <input type="number" id="maxNewTokens" v-model="settings.maxNewTokens" />
+                    </div>
+                    <div class="setting-row">
+                        <label for="inputTwo">Context Length</label>
+                        <input type="number" id="contextLength" v-model="settings.contextLength" />
+                    </div>
+                  </div>
+            </template>
         </div>
+        
     </div>
 	<script src="./script.js"></script>
 </body>
