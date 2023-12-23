@@ -32,7 +32,8 @@
 <!-- SETUP -->
 <details>
 <summary style="font-size:2rem">Setup</summary>
-<br>
+
+---
 
 Clone the repository
 
@@ -66,7 +67,131 @@ By default, if no huggingface model was specified, blowtorch will load a slim mo
 from blowtorch import client
 client(device='cpu').cli()
 ```
+
+Generally speaking, LLMs are designed to continue (predict) word sequences, thus loading an LLM and generating from inputs like a started sentence, it will try to finish the sentence. For a chat-like experience, blowtorch exploits and tracks the context and initializes the chat with attributes (and character), which allows the AI to track the context and reason accordingly.
+
+First, to download and run an arbitrary huggingface model,even with specified checkpoint file
+
+```python
+cl = client('llama-2-7b-chat.Q2_K.gguf', 
+            'TheBloke/Llama-2-7B-Chat-GGUF', 
+            name='AI',
+            device='cpu', 
+            model_type="llama",
+            max_new_tokens = 1000,
+            context_length = 6000)
+```
+also, you can give your client a name, model_type (should match the current model), and it's possible to pre-define some transformers kwargs, but those can be overriden by ``cli`` or ``chat`` method kwargs.
+For a gpt-chat in the console one can use the ``chat`` method
+
+```python
+cl.chat(
+    max_new_tokens=128, 
+    char_tags=[
+        'polite',
+        'focused and helpful',
+        'expert in programing',
+        'obedient'
+    ], 
+    username='Human',
+    do_sample=False, 
+    temperature=0.8, 
+    repetition_penalty=1.1)
+```
+
+As shown in this snippet, `chat` takes several arguments: ``max_new_tokens`` allow to control the output length (high values can impact generation time), ``char_tags`` allows to specify attributes or character, ``username`` specifies the user's name.
+The other variables ``do_sample, temperature, repetition_penalty`` are additional ``transformer`` kwargs, that will be accepted as well. Alternatively, the chat arguments can be pre-loaded (often useful) with the ``setConfig`` method
+
+```python
+cl = client('llama-2-7b-chat.Q2_K.gguf', 
+            'TheBloke/Llama-2-7B-Chat-GGUF', 
+            name='AI',
+            device='cpu', 
+            model_type="llama",
+            max_new_tokens = 1000,
+            context_length = 6000)
+
+cl.setConfig(
+    char_tags=[
+        'carring comrade',
+        'polite',
+        'focused and helpful',
+        'expert in programing',
+        'obedient'
+    ], 
+    username='Human',
+    do_sample=True, 
+    temperature=0.8, 
+    repetition_penalty=1.1
+)
+
+cl.chat() # no arguments needed
+```
+
+Once the configuration of a client is setup, it may be exposed via a **web server** for a better GUI
+
+```python
+cl.setConfig(
+    char_tags=[
+        'carring comrade',
+        'polite',
+        'focused and helpful',
+        'expert in programing',
+        'obedient'
+    ], 
+    username='Human',
+    do_sample=True, 
+    temperature=0.8, 
+    repetition_penalty=1.1
+)
+
+# expose web service
+from blowtorch import webUI
+webUI(cl)
+```
 </details>
+
+
+
+
+<!-- BENCHMARKS -->
+<details>
+<summary style="font-size:2rem">Benchmarks</summary>
+
+---
+
+`blowtorch` comes with a built-in benchmark feature. Assuming a configured client, loaded with a model of choice, the bench method can be called for performance metrics and memory usage. Note that for proper measurement and better estimate, the benchmark performs a 512 token generation which can take around a minute.
+
+```python
+cl = client('llama-2-7b-chat.Q2_K.gguf', 
+            'TheBloke/Llama-2-7B-Chat-GGUF', 
+            name='AI',
+            device='cpu', 
+            model_type="llama",
+            context_length = 6000)
+
+cl.bench()
+```
+
+    info: start benchmark ...
+
+    -------- benchmark results --------
+    Device: AMD64 Family 23 Model 113 Stepping 0, AuthenticAMD
+    RAM Usage: 3.9 gb
+    vRAM Usage: 0 b
+    Max. Token Window: 512
+    Tokens Generated: 519
+    Bytes Generated: 1959 bytes
+    Token Rate: 6.701 tokens/s
+    Data Rate: 25.294 bytes/s
+    Bit Rate: 202.352 bit/s
+    TPOT: 149.231 ms/token
+    Total Gen. Time: 77.448 s
+
+The results show that the total RAM consumption (of the total python process) takes around $3.9GB$.
+
+</details>
+
 
 
 
@@ -76,7 +201,7 @@ client(device='cpu').cli()
 
 ---
 
-Otherwise, assuming blowtorch have just been installed, pre-trained models like e.g. Llama2 can directly be ported from huggingface hub, and subsequently start a conversation in just 3 lines:
+Pre-trained models like e.g. Llama2 can directly be ported from huggingface hub, and subsequently propagate inputs or inference, through the model.
 
 
 ```python
@@ -96,6 +221,9 @@ of motion, time is a fixed quantity that moves along with space, yet according t
 Human: can you explain what a dejavu is?
 Llama-2-7B-Chat-GGML: [{'generated_text': 'can you explain what a dejavu is?\n\nAnswer: A deja vu is a French term that refers to a feeling of familiarity or recognition that cannot be explained. It\'s the sensation of having already experienced an event, situation, or place, even though you know that you have not. Deja vu can also be described as a "'}]
 ```
+
+The cli is a useful method is intended for testing forward-propagation and will not track context, or be reasonable (rather halucinating a bit).
+
 </details>
 
 
@@ -172,6 +300,33 @@ also we can play a game of **guess who**
     human: Yes!
 </details>
 
+
+<!-- WEB UI  -->
+<details>
+<summary style="font-size:2rem">Web UI</summary>
+
+---
+
+```python
+cl.setConfig(
+    char_tags=[
+        'carring comrade',
+        'polite',
+        'focused and helpful',
+        'expert in programing',
+        'obedient'
+    ], 
+    username='Human',
+    do_sample=True, 
+    temperature=0.8, 
+    repetition_penalty=1.1
+)
+
+from blowtorch import webUI
+webUI(cl)
+```
+
+</details>
 
 
 <!-- API EXAMPLES -->

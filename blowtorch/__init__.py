@@ -246,13 +246,19 @@ class client:
                 # post-processing & format
                 processed = raw_output[0]['generated_text']  # unpack
                 processed = processed.replace(inference_input, '').replace('\n\n', '') # remove initial input and empty lines
+                user_tag = f'{username}:'.lower()
+                # aiTag = f'{self.name}:'.lower()
+                processed_rohling = ''
                 for paragraph in processed.split('\n'): # extract the first answer and disregard further generations
-                    if f'{username}:' in paragraph[:3]:
-                        # processed = paragraph
+                    # check if the paragraph refers to AI's output
+                    # otherwise if it's a random user generation terminate
+                    if user_tag in paragraph[:2*len(user_tag)].lower():
                         break
-                    processed += '\n'+paragraph
-                processed = processed.split(username+': ')[0] # remove possible answers (as the ai continues otherwise by improvising the whole dialogue)
-                
+                    processed_rohling += '\n'+paragraph
+                # remove possible answers (as the ai continues otherwise by improvising the whole dialogue)
+                # override processed variable with rohling
+                processed = processed_rohling.split(username+': ')[0] 
+
                 # append to context
                 self.context[id] += processed + '\n'
                 
@@ -346,15 +352,34 @@ class client:
         # print('inference input', inference_input)
         raw_output = self.inference(inference_input, **pipe_kwargs)
 
+        print('raw output:', raw_output)
+
         # post-processing & format
         processed = raw_output[0]['generated_text']  # unpack
         processed = processed.replace(inference_input, '').replace('\n\n', '') # remove initial input and empty lines
+        user_tag = f'{username}:'.lower()
+        # aiTag = f'{self.name}:'.lower()
+        processed_rohling = ''
         for paragraph in processed.split('\n'): # extract the first answer and disregard further generations
-            if f'{username}:' in paragraph[:3]:
-                # processed = paragraph
+            # check if the paragraph refers to AI's output
+            # otherwise if it's a random user generation terminate
+            if user_tag in paragraph[:2*len(user_tag)].lower():
                 break
-            processed += '\n'+paragraph
-        processed = processed.split(username+': ')[0] # remove possible answers (as the ai continues otherwise by improvising the whole dialogue)
+            processed_rohling += '\n'+paragraph
+        # remove possible answers (as the ai continues otherwise by improvising the whole dialogue)
+        # override processed variable with rohling
+        processed = processed_rohling.split(username+': ')[0] 
+        
+        print('processed', processed)
+
+        # post-processing & format
+        # processed = raw_output[0]['generated_text']  # unpack
+        # processed = processed.replace(inference_input, '').replace('\n\n', '') # remove initial input and empty lines
+        # for paragraph in processed.split('\n'): # extract the first answer and disregard further generations
+        #     if f'{username}:' in paragraph[:len(f'{username}:')]:
+        #         break
+        #     processed += '\n'+paragraph
+        # processed = processed.split(username+': ')[0] # remove possible answers (as the ai continues otherwise by improvising the whole dialogue)
         
         # check if transformer has lost path from conversation
         if not f'{self.name}:' in processed:
@@ -636,40 +661,3 @@ class webUI ():
         with socketserver.TCPServer((self.host, self.port), handler) as httpd:
             print(f'serving blowtorch web UI at http://{self.host}:{self.port}')
             httpd.serve_forever()
-
-
-if __name__ == '__main__':
-
-    webUI('')
-
-    # client(device='cpu').cli() # run small palmyra model for testing
-    # client(hugging_face_path='TheBloke/Llama-2-7B-Chat-GGML', device='cpu', model_type="llama").cli(max_new_tokens=64, do_sample=True, temperature=0.8, repetition_penalty=1.1)
-    
-
-    # client('llama-2-7b-chat.Q2_K.gguf', 
-    #            'TheBloke/Llama-2-7B-Chat-GGUF', 
-    #            device='cpu', 
-    #            model_type="llama",
-    #            max_new_tokens = 1000,
-    #            context_length = 6000
-    # ).chat(
-    #     max_new_tokens=128, 
-    #     char_tags=['helpful', 'cheeky', 'kind', 'obedient', 'honest'], 
-    #     do_sample=False, 
-    #     temperature=0.8, 
-    #     repetition_penalty=1.1
-    # )
-    
-
-    # client('llama-2-7b-chat.Q2_K.gguf', 
-    #            'TheBloke/Llama-2-7B-Chat-GGUF', 
-    #            name='Arnold',
-    #            device='cpu', 
-    #            model_type="llama"
-    # ).chat(
-    #     max_new_tokens=128, 
-    #     char_tags=['funnily impersonates Arnold Schwarzenegger', 'joking', 'randomly stating facts about his career', 'hectic'], 
-    #     do_sample=False, 
-    #     temperature=0.8, 
-    #     repetition_penalty=1.1
-    # )
