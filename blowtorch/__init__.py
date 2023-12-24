@@ -198,7 +198,7 @@ class client:
                 show_duration = conf['show_duration']
                 conf.pop('show_duration')
             # override pipe kwargs with left kwargs in config
-            pipe_kwargs = conf
+            pipe_kwargs.update(conf)
 
         # generate unique chat identifier from ns timestamp
         while True:
@@ -246,13 +246,14 @@ class client:
                 # post-processing & format
                 processed = raw_output[0]['generated_text']  # unpack
                 processed = processed.replace(inference_input, '').replace('\n\n', '') # remove initial input and empty lines
-                user_tag = f'{username}:'.lower()
-                # aiTag = f'{self.name}:'.lower()
+                user_tags = [f'{username}:'.lower(), f'{username};'.lower()]
+                ai_tags = [f'{self.name}:'.lower(), f'{self.name};'.lower()]
                 processed_rohling = ''
                 for paragraph in processed.split('\n'): # extract the first answer and disregard further generations
                     # check if the paragraph refers to AI's output
                     # otherwise if it's a random user generation terminate
-                    if user_tag in paragraph[:2*len(user_tag)].lower():
+                    head = paragraph[:2*len(user_tags[0])].lower()
+                    if user_tags[0] in head or user_tags[1] in head or ai_tags[0] in head or ai_tags[1] in head:
                         break
                     processed_rohling += '\n'+paragraph
                 # remove possible answers (as the ai continues otherwise by improvising the whole dialogue)
@@ -314,7 +315,7 @@ class client:
         If setConfig was call priorly kwargs, the pre-defined kwargs will be overriden.
         '''
 
-        # clarify kwargs
+        # clarify kwargs by merging with config (if enabled)
         if self.config:
             conf = self.config
             # override standard kwargs with existing 
@@ -325,8 +326,11 @@ class client:
             if 'char_tags' in conf:
                 char_tags = conf['char_tags']
                 conf.pop('char_tags')
+            if 'show_duration' in conf:
+                show_duration = conf['show_duration']
+                conf.pop('show_duration')
             # override pipe kwargs with left kwargs in config
-            pipe_kwargs = conf
+            pipe_kwargs.update(conf)
 
         # initialize new context by registering sessionId in context object
         if not sessionId in self.context:
@@ -339,20 +343,19 @@ class client:
         if formattedInput[-1] not in punctuation:
             formattedInput += '. '
         
-        # append formatted input to context
-        self.context[sessionId] += formattedInput + '\n'
-
-        # extract inference payload from context
+        # firstly, slice the context feed by the max. allowed size
         if len(self.context[sessionId]) > self.max_bytes_context_length:
             inference_input = self.context[sessionId][-self.max_bytes_context_length]
         else:
             inference_input = self.context[sessionId]
+        
+        # then append formatted input to context and inference input
+        self.context[sessionId] += formattedInput + '\n'
+        inference_input += formattedInput + '\n'
 
         # inference -> get raw string output
         # print('inference input', inference_input)
         raw_output = self.inference(inference_input, **pipe_kwargs)
-
-        print('raw output:', raw_output)
 
         # post-processing & format
         processed = raw_output[0]['generated_text']  # unpack
@@ -369,17 +372,6 @@ class client:
         # remove possible answers (as the ai continues otherwise by improvising the whole dialogue)
         # override processed variable with rohling
         processed = processed_rohling.split(username+': ')[0] 
-        
-        print('processed', processed)
-
-        # post-processing & format
-        # processed = raw_output[0]['generated_text']  # unpack
-        # processed = processed.replace(inference_input, '').replace('\n\n', '') # remove initial input and empty lines
-        # for paragraph in processed.split('\n'): # extract the first answer and disregard further generations
-        #     if f'{username}:' in paragraph[:len(f'{username}:')]:
-        #         break
-        #     processed += '\n'+paragraph
-        # processed = processed.split(username+': ')[0] # remove possible answers (as the ai continues otherwise by improvising the whole dialogue)
         
         # check if transformer has lost path from conversation
         if not f'{self.name}:' in processed:
@@ -441,13 +433,13 @@ class client:
 
         return device
     
-    def inference (self, input_text:str, max_new_tokens:int=64, **pipe_kwargs) -> list[dict[str,str]]:
+    def inference (self, input_text:str, **pipe_kwargs) -> list[dict[str,str]]:
 
         '''
         Inference of input through model using the transformer pipeline.
         '''
-
-        return self.pipe(input_text, max_new_tokens=max_new_tokens, **pipe_kwargs)
+        print('pipe kwargs:', pipe_kwargs)
+        return self.pipe(input_text, **pipe_kwargs)
 
     def ramUsage (self) -> tuple[float, str]:
 
@@ -615,7 +607,7 @@ class handler (SimpleHTTPRequestHandler):
             output = self.__client__.contextInference(
                 message, 
                 sessionId=sessionId,
-                max_new_tokens=maxNewTokens,
+                max_new_tokens=maxNewTokens
             )
 
             # add output to data

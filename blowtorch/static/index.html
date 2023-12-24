@@ -18,15 +18,19 @@
                 <button @click="submit">Send</button>
             </div>
             <template id="settings-section">
-                <div class="settings-container">
+                  <div class="settings-container">
                     <div class="setting-row">
-                        <label for="inputOne">Max. New Tokens</label>
+                        <label for="maxNewTokens">Max. New Tokens</label>
                         <input type="number" id="maxNewTokens" v-model="settings.maxNewTokens" />
                     </div>
                     <div class="setting-row">
-                        <label for="inputTwo">Context Length</label>
+                        <label for="contextLength">Context Length</label>
                         <input type="number" id="contextLength" v-model="settings.contextLength" />
                     </div>
+                  </div>
+                  <div class="setting-row">
+                    <label for="typeWriterMode">Typewriter Mode</label>
+                    <input type="checkbox" id="typeWriterMode" v-model="settings.typeWriterMode" />
                   </div>
             </template>
         </div>

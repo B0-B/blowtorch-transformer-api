@@ -7,11 +7,11 @@ const app = createApp({
             context: {},
             count: 0,
             inputFillSpeed: 1.5,
-            maxNewTokens: 256,
             sessionId: null,
             settings: { 
-                maxNewTokens: 128,
-                contextLength: 6000
+                maxNewTokens: 256,
+                contextLength: 6000,
+                typeWriterMode: true
             },
             submitEnabled: true
         }
@@ -153,7 +153,8 @@ const app = createApp({
             let pkg = {
                 sessionId: this.sessionId,
                 message: payload,
-                maxNewTokens: this.maxNewTokens
+                maxNewTokens: this.settings.maxNewTokens,
+                contextLength: this.settings.contextLength
             }
 
             // disable submit function
@@ -184,12 +185,17 @@ const app = createApp({
             const formattedAnswer = await this.formatMessage(answer);
             
             // fill into message box
-            msgBox.innerHTML = '';
-            for (let i = 0; i < formattedAnswer.length; i++) {
-                const char = formattedAnswer[i];
-                msgBox.innerHTML += char;
-                await this.sleep(.1 / this.inputFillSpeed);
+            if (settings.typeWriterMode) {
+                msgBox.innerHTML = '';
+                for (let i = 0; i < formattedAnswer.length; i++) {
+                    const char = formattedAnswer[i];
+                    msgBox.innerHTML += char;
+                    await this.sleep(.1 / this.inputFillSpeed);
+                }
+            } else {
+                msgBox.innerHTML = formattedAnswer;
             }
+            
 
             // stop event listener for message box
             resizeObserver.unobserve(msgBox);
