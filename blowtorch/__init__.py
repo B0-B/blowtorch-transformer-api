@@ -361,6 +361,7 @@ class client:
 
         # initialize new context by registering sessionId in context object
         if not sessionId in self.context:
+            self.log(f'Start new conversation {sessionId}', label='🗯️')
             self.context[sessionId] = f"""A dialog, where a user interacts with {self.name}. {self.name} is {', '.join(char_tags)}, and knows its own limits.\n{username}: Hello, {self.name}.\n{self.name}: Hello! How can I assist you today?\n"""
 
         # format input
@@ -410,8 +411,6 @@ class client:
 
         # append to context
         self.context[sessionId] += processed + '\n'
-
-        print('generated:', self.context)
 
         return processed
 
@@ -479,7 +478,7 @@ class client:
         if self.silent:
             return
 
-        header = f"{__colors__[color]}{label.upper()}{__colors__['nc']}"
+        header = f"{__colors__[color]}{label.upper()}{__colors__['nc']} "
         print(header, *stdout)
 
     def ramUsage (self) -> tuple[float, str]:
@@ -651,6 +650,8 @@ class handler (SimpleHTTPRequestHandler):
                 max_new_tokens=maxNewTokens
             )
 
+            self.__client__.log('send:', output, label='📨')
+
             # add output to data
             response['data']['message'] = output
 
@@ -691,8 +692,12 @@ class webUI ():
 
     def startServer (self):
 
+        '''
+        Starts the TCP server with handler class.
+        '''
+
         with socketserver.TCPServer((self.host, self.port), handler) as httpd:
-            print(f'serving blowtorch web UI at http://{self.host}:{self.port}')
+            print(f'📡 serving blowtorch UI server at http://{self.host}:{self.port}')
             httpd.serve_forever()
 
 
