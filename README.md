@@ -73,7 +73,7 @@ client(device='cpu').cli()
 
 Generally speaking, LLMs are designed to continue (predict) word sequences, thus loading an LLM and generating from inputs like a started sentence, it will try to finish the sentence. For a chat-like experience, blowtorch exploits and tracks the context and initializes the chat with attributes (and character), which allows the AI to track the context and reason accordingly.
 
-First, to download and run an arbitrary huggingface model,even with specified checkpoint file
+First, to download and run an arbitrary huggingface model, even with specified checkpoint file
 
 ```python
 cl = client('llama-2-7b-chat.Q2_K.gguf', 
@@ -131,7 +131,7 @@ cl.setConfig(
 cl.chat() # no arguments needed
 ```
 
-Once the configuration of a client is setup, it may be exposed via a **web server** for a better GUI
+Once the configuration of a client is setup, it may be exposed via a **web server** for a better GUI **(for more info see web UI section)**
 
 ```python
 cl.setConfig(
@@ -152,7 +152,10 @@ cl.setConfig(
 from blowtorch import webUI
 webUI(cl)
 ```
+
+
 </details>
+
 
 
 
