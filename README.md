@@ -13,6 +13,8 @@
 
 ---
 
+
+
 ## Features
 - simple to install with automated setup and model setup in just 2 lines.
 - Works for Windows (only CPU tested) and Linux (CPU/GPU)
@@ -27,6 +29,7 @@
 - A system with a CPU (preferably Ryzen) and `>=16GB` RAM
 - Assumes drivers were correctly installed and GPU is detectable via rocm-smi, nvidia-smi etc.
 - A solid GPT chat requires `>=6GB` of RAM/vRAM depending on device.
+
 
 
 <!-- SETUP -->
@@ -307,6 +310,13 @@ also we can play a game of **guess who**
 
 ---
 
+The API comes with a web interface implementation for better I/O. It serves all the necessary needs however should be considered PoC at this stage to demonstrate how to create applications by using blowtorch under the hood.
+Here is an example screenshot running exposed on local host
+
+<p align="center"><img width=600 src='./demo.PNG' ></p>
+
+`webUI` is a ``client``-wrapper which will expose your client, once it's configured for production (e.g. using the setConfig method) as such
+
 ```python
 cl.setConfig(
     char_tags=[
@@ -323,8 +333,10 @@ cl.setConfig(
 )
 
 from blowtorch import webUI
-webUI(cl)
+webUI(cl, port=3000)
 ```
+
+**Note:** Every TCP connection, i.e. browser window, tab will initiliaze a new session ID which is passed to the server who keeps track of different conversations and distinguishes them.
 
 </details>
 
