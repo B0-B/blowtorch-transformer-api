@@ -18,7 +18,7 @@ import warnings
 import psutil
 import subprocess
 import platform
-from traceback import print_exc
+from traceback import print_exc, format_exc
 from pathlib import Path, PosixPath
 from os import getpid, chdir, getcwd
 
@@ -32,9 +32,21 @@ import socketserver
 from http.server import SimpleHTTPRequestHandler
 
 
-__root__ = Path(__file__).parent
-warnings.filterwarnings("ignore")
 
+__root__ = Path(__file__).parent
+
+
+
+# __________ logging __________
+# colors for logging
+__colors__ = {
+    'b': '\033[94m',
+    'c': '\033[96m',
+    'g': '\033[92m',
+    'y': '\033[93m',
+    'r': '\033[91m',
+    'nc': '\033[0m'
+}
 
 class client:
 
@@ -42,10 +54,25 @@ class client:
     model_file          e.g. llama-2-7b-chat.Q2_K.gguf
                         specific file from card
     huggingFacePath     e.g. Writer/palmyra-small
+    device              'cpu' or 'gpu'
     gpu_layers          number of layers to offload gpus (0 for pure cpu usage)
+    name                the name of the client
+    verbose             if true will disable all warnings
+    silent              if true will diable all console output
+    **twargs            custom trasformer key word arguments
     '''
 
-    def __init__ (self, model_file:str|None=None, hugging_face_path:str|None=None, device:str='gpu', gpu_layers:int=0, name: str|None=None, **kwargs) -> None:
+    def __init__ (self, model_file:str|None=None, hugging_face_path:str|None=None, device:str='gpu', gpu_layers:int=0, 
+                  name: str|None=None, verbose: bool=False, silent: bool=False, **twargs) -> None:
+
+        # stdout console logging
+        self.silent = silent
+        if not verbose:
+            # filter general warnings in stdout
+            warnings.filterwarnings("ignore")
+            # disable specifically transfomer warnings
+            # this will suppress fp8, fp16, flash attention etc. 
+            transformers.logging.set_verbosity_warning()
 
         # load pre-trained model and input tokenizer
         # default will be palmyra-small 128M parameters
@@ -59,37 +86,37 @@ class client:
             self.name = name
 
         # collect all arguments for model
-        _kwargs = {}
+        _twargs = {}
         if model_file:
-            _kwargs['model_file'] = model_file
+            _twargs['model_file'] = model_file
         if gpu_layers:
-            _kwargs['gpu_layers'] = gpu_layers
-        if 'load_in_8bit' in kwargs and kwargs['load_in_8bit']:
-            _kwargs['load_in_8bit'] = True
-        _kwargs['dtype'] = torch.float16
-        for k,v in kwargs.items():
-            _kwargs[k] = v
+            _twargs['gpu_layers'] = gpu_layers
+        if 'load_in_8bit' in twargs and twargs['load_in_8bit']:
+            _twargs['load_in_8bit'] = True
+        _twargs['dtype'] = torch.float16
+        for k,v in twargs.items():
+            _twargs[k] = v
         
         # -- load model and tokenizer --
         try:
 
             # some models can be quantized to 8-bit precision
-            print('info: try loading transformers with assembled arguments ...')
+            self.log('try loading transformers with assembled arguments ...', label='⚙️')
 
             # default transformers
-            self.model = transformers.AutoModelForCausalLM.from_pretrained(hugging_face_path, **_kwargs)
+            self.model = transformers.AutoModelForCausalLM.from_pretrained(hugging_face_path, **_twargs)
             # extract tokenizer
             self.tokenizer = transformers.AutoTokenizer.from_pretrained(hugging_face_path)
 
         except:
             
             # ctransfomers for builds with GGUF weight format
-            # load with input kwargs only, since gpu parameters are not known
+            # load with input twargs only, since gpu parameters are not known
             try:
 
-                print('info: try loading with ctransformers ...')
+                self.log('try loading with ctransformers ...', label='⚙️')
                 
-                self.model = ctransformers.AutoModelForCausalLM.from_pretrained(hugging_face_path, model_file=model_file, gpu_layers=gpu_layers, hf=True, **kwargs)
+                self.model = ctransformers.AutoModelForCausalLM.from_pretrained(hugging_face_path, model_file=model_file, gpu_layers=gpu_layers, hf=True, **twargs)
                 self.tokenizer = ctransformers.AutoTokenizer.from_pretrained(self.model)
 
             except:
@@ -97,29 +124,29 @@ class client:
                 print_exc()
                 # for some models there is no specfic path
                 try:
-
-                    print('info: try loading with hugging path only ...')
+                    
+                    self.log('try loading with hugging path only ...', label='⚙️')
                     
                     self.model = transformers.AutoModelForCausalLM.from_pretrained(hugging_face_path)
                     self.tokenizer = transformers.AutoTokenizer.from_pretrained(hugging_face_path)
 
                 except:
 
-                    print_exc()
-                    TypeError(f'Cannot load {hugging_face_path} ...')
+                    self.log(f'Cannot load {hugging_face_path} ...', label='🛑')
+                    ModelLoadingError(format_exc())
         
-        print(f'info: successfully loaded {hugging_face_path}!')
+        self.log(f'successfully loaded {hugging_face_path}!', label='✅')
 
         # select cuda encoding for selected device
         self.setDevice(device)
-        print(f'info: will use {device} device.')
+        self.log(f'will use {device} device.', label='⚠️')
 
         # create context object
         self.context = {}
         self.max_bytes_context_length = 4096
 
-        # kwargs config, which can be pre-set before calling inference, cli or chat
-        # use setConfig to define inference kwargs
+        # twargs config, which can be pre-set before calling inference, cli or chat
+        # use setConfig to define inference twargs
         self.config = None
 
         # create pipeline
@@ -131,7 +158,7 @@ class client:
         A quick benchmark of the loaded model.
         '''
 
-        print('info: start benchmark ...')
+        self.log('start benchmark ...', label='⏱️')
 
         stopwatch_start = time_ns()
         raw_output = self.inference('please write a generic long letter', token_length)
@@ -172,21 +199,21 @@ class client:
             f'\nTotal Gen. Time: {duration} s'
         )
         
-    def chat (self, username: str='human', char_tags: list[str]=['helpful'], show_duration: bool=True, **pipe_kwargs) -> None:
+    def chat (self, username: str='human', char_tags: list[str]=['helpful'], show_duration: bool=True, **pipe_twargs) -> None:
 
         '''
         A text-to-text chat loop with context aggregator.
         Will initialize a new chat with identifier in context.
         Helpful to interfere with the model via command line.
 
-        If setConfig was called priorly, pipe_kwargs will be overriden.
-        If setConfig includes the method kwargs it will override as well.
+        If setConfig was called priorly, pipe_twargs will be overriden.
+        If setConfig includes the method twargs it will override as well.
         '''
 
-        # clarify kwargs
+        # clarify twargs
         if self.config:
             conf = self.config
-            # override standard kwargs with existing 
+            # override standard twargs with existing 
             # config value and remove from config
             if 'username' in conf:
                 username = conf['username']
@@ -197,8 +224,8 @@ class client:
             if 'show_duration' in conf:
                 show_duration = conf['show_duration']
                 conf.pop('show_duration')
-            # override pipe kwargs with left kwargs in config
-            pipe_kwargs.update(conf)
+            # override pipe twargs with left twargs in config
+            pipe_twargs.update(conf)
 
         # generate unique chat identifier from ns timestamp
         while True:
@@ -238,7 +265,7 @@ class client:
                 # print('inference input', inference_input)
                 if show_duration: 
                     stopwatch_start = time_ns()
-                raw_output = self.inference(inference_input, **pipe_kwargs)
+                raw_output = self.inference(inference_input, **pipe_twargs)
                 if show_duration: 
                     stopwatch_stop = time_ns()
                     duration_in_seconds = round((stopwatch_stop - stopwatch_start)*1e-9, 2)
@@ -288,7 +315,7 @@ class client:
 
                 print_exc()
 
-    def cli (self, **pipe_kwargs) -> None:
+    def cli (self, **pipe_twargs) -> None:
 
         '''
         A command line inference loop.
@@ -300,25 +327,25 @@ class client:
             try:
 
                 inputs = input('Human: ')
-                print('\n' + self.name + ':', self.inference(inputs, **pipe_kwargs))
+                print('\n' + self.name + ':', self.inference(inputs, **pipe_twargs))
 
             except KeyboardInterrupt:
                 
                 break
     
-    def contextInference (self, input_text:str, sessionId: int=0, username: str='human', char_tags: list[str]=['helpful'], **pipe_kwargs):
+    def contextInference (self, input_text:str, sessionId: int=0, username: str='human', char_tags: list[str]=['helpful'], **pipe_twargs):
 
         '''
         Mimicks the chat method, but returns the output.
         Used for webUI inference, will behave the same as chat method.
 
-        If setConfig was call priorly kwargs, the pre-defined kwargs will be overriden.
+        If setConfig was call priorly twargs, the pre-defined twargs will be overriden.
         '''
 
-        # clarify kwargs by merging with config (if enabled)
+        # clarify twargs by merging with config (if enabled)
         if self.config:
             conf = self.config
-            # override standard kwargs with existing 
+            # override standard twargs with existing 
             # config value and remove from config
             if 'username' in conf:
                 username = conf['username']
@@ -329,8 +356,8 @@ class client:
             if 'show_duration' in conf:
                 show_duration = conf['show_duration']
                 conf.pop('show_duration')
-            # override pipe kwargs with left kwargs in config
-            pipe_kwargs.update(conf)
+            # override pipe twargs with left twargs in config
+            pipe_twargs.update(conf)
 
         # initialize new context by registering sessionId in context object
         if not sessionId in self.context:
@@ -355,7 +382,7 @@ class client:
 
         # inference -> get raw string output
         # print('inference input', inference_input)
-        raw_output = self.inference(inference_input, **pipe_kwargs)
+        raw_output = self.inference(inference_input, **pipe_twargs)
 
         # post-processing & format
         processed = raw_output[0]['generated_text']  # unpack
@@ -383,6 +410,8 @@ class client:
 
         # append to context
         self.context[sessionId] += processed + '\n'
+
+        print('generated:', self.context)
 
         return processed
 
@@ -433,13 +462,25 @@ class client:
 
         return device
     
-    def inference (self, input_text:str, **pipe_kwargs) -> list[dict[str,str]]:
+    def inference (self, input_text:str, **pipe_twargs) -> list[dict[str,str]]:
 
         '''
         Inference of input through model using the transformer pipeline.
         '''
-        print('pipe kwargs:', pipe_kwargs)
-        return self.pipe(input_text, **pipe_kwargs)
+        print('pipe twargs:', pipe_twargs)
+        return self.pipe(input_text, **pipe_twargs)
+
+    def log (self, *stdout: any, label='info', color='c') -> None:
+
+        '''
+        Logs args to console.
+        '''
+
+        if self.silent:
+            return
+
+        header = f"{__colors__[color]}{label.upper()}{__colors__['nc']}"
+        print(header, *stdout)
 
     def ramUsage (self) -> tuple[float, str]:
 
@@ -480,24 +521,24 @@ class client:
                 # ctransformers
                 self.model.reset()
             except:
-                pass
+                self.log('cannot reset model:', format_exc(), label='🛑')
 
         # clear the cache from device
         torch.cuda.empty_cache()
         gc.collect()
     
-    def setConfig (self, **kwargs) -> None:
+    def setConfig (self, **twargs) -> None:
 
         '''
-        An alternative settings method for transformer kwargs.
-        The provided kwargs will be forwarded to inference and chat.
+        An alternative settings method for transformer twargs.
+        The provided twargs will be forwarded to inference and chat.
         Usage:
         _client = client(...)
-        _client.setConfig(kwargs...)
-        _client.chat() # no kwargs needed anymore
+        _client.setConfig(twargs...)
+        _client.chat() # no twargs needed anymore
         '''
 
-        self.config = kwargs
+        self.config = twargs
 
     def setDevice (self, device: str) -> None:
 
@@ -575,26 +616,26 @@ class handler (SimpleHTTPRequestHandler):
         post_data = self.rfile.read(content_length)
         data = json.loads(post_data.decode('utf-8'))
 
-        print('data received:', data)
+        self.__client__.log('data received:', data, label='📩')
 
         # check if package is consistent
         if not data['sessionId']:
 
             err = 'No sessionId provided!'
             response['errors'].append(err)
-            print(err)
+            self.__client__.log(err, label='🛑')
 
         elif not data['message']:
             
             err = 'No message provided in request!'
             response['errors'].append(err)
-            print(err)
+            self.__client__.log(err, label='🛑')
 
         elif not (data['maxNewTokens'] and type(data['maxNewTokens']) is int and data['maxNewTokens'] > 64):
             
             err = 'maxNewTokens must be >=64!'
-            print(err)
             response['errors'].append(err)
+            self.__client__.log(err, label='🛑')
         
         else:
 
@@ -653,3 +694,8 @@ class webUI ():
         with socketserver.TCPServer((self.host, self.port), handler) as httpd:
             print(f'serving blowtorch web UI at http://{self.host}:{self.port}')
             httpd.serve_forever()
+
+
+class ModelLoadingError (Exception):
+
+    pass

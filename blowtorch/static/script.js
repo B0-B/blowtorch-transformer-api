@@ -185,7 +185,7 @@ const app = createApp({
             const formattedAnswer = await this.formatMessage(answer);
             
             // fill into message box
-            if (settings.typeWriterMode) {
+            if (this.settings.typeWriterMode) {
                 msgBox.innerHTML = '';
                 for (let i = 0; i < formattedAnswer.length; i++) {
                     const char = formattedAnswer[i];
