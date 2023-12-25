@@ -14,10 +14,9 @@ cl = client('llama-2-7b-chat.Q2_K.gguf',
             device='cpu', 
             model_type="llama",
             max_new_tokens = 1000,
-            context_length = 10000)
+            context_length = 6000)
 
 cl.setConfig(
-    max_new_tokens=1024, 
     char_tags=[
         'skilled like chat GPT', 
         'high performance',
