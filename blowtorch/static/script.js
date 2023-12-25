@@ -6,7 +6,7 @@ const app = createApp({
             message: 'Hello Vue!',
             context: {},
             count: 0,
-            inputFillSpeed: 1.5,
+            inputFillSpeed: 5,
             sessionId: null,
             settings: { 
                 maxNewTokens: 256,
@@ -120,12 +120,25 @@ const app = createApp({
             let chatWindow = document.getElementById('chat-window');
             chatWindow.scrollTop = chatWindow.scrollHeight;
         },
-        sleep: function (seconds) {
+        sleep (seconds) {
             return new Promise(function(resolve) {
                 setTimeout(function() {
                     resolve(0);
                 }, 1000*seconds);
             });
+        },
+        async render (message, msgBox) {
+            // fill into message box
+            if (this.settings.typeWriterMode) {
+                msgBox.innerHTML = '';
+                for (let i = 0; i < message.length; i++) {
+                    const char = message[i];
+                    msgBox.innerHTML += char;
+                    await this.sleep(.1 / this.inputFillSpeed);
+                }
+            } else {
+                msgBox.innerHTML = message;
+            }
         },
         async submit () {
 
@@ -185,16 +198,17 @@ const app = createApp({
             const formattedAnswer = await this.formatMessage(answer);
             
             // fill into message box
-            if (this.settings.typeWriterMode) {
-                msgBox.innerHTML = '';
-                for (let i = 0; i < formattedAnswer.length; i++) {
-                    const char = formattedAnswer[i];
-                    msgBox.innerHTML += char;
-                    await this.sleep(.1 / this.inputFillSpeed);
-                }
-            } else {
-                msgBox.innerHTML = formattedAnswer;
-            }
+            // if (this.settings.typeWriterMode) {
+            //     msgBox.innerHTML = '';
+            //     for (let i = 0; i < formattedAnswer.length; i++) {
+            //         const char = formattedAnswer[i];
+            //         msgBox.innerHTML += char;
+            //         await this.sleep(.1 / this.inputFillSpeed);
+            //     }
+            // } else {
+            //     msgBox.innerHTML = formattedAnswer;
+            // }
+            await this.render(formattedAnswer, msgBox);
             
 
             // stop event listener for message box
