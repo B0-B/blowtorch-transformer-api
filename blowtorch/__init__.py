@@ -262,10 +262,11 @@ class client:
                     inference_input = self.context[id]
 
                 # inference -> get raw string output
-                # print('inference input', inference_input)
+                # print(inference_input)
                 if show_duration: 
                     stopwatch_start = time_ns()
                 raw_output = self.inference(inference_input, **pipe_twargs)
+                # print('raw', raw_output)
                 if show_duration: 
                     stopwatch_stop = time_ns()
                     duration_in_seconds = round((stopwatch_stop - stopwatch_start)*1e-9, 2)
@@ -273,14 +274,12 @@ class client:
                 # post-processing & format
                 processed = raw_output[0]['generated_text']  # unpack
                 processed = processed.replace(inference_input, '').replace('\n\n', '') # remove initial input and empty lines
-                user_tags = [f'{username}:'.lower(), f'{username};'.lower()]
-                ai_tags = [f'{self.name}:'.lower(), f'{self.name};'.lower()]
+                user_tag = f'{username}:'.lower()
                 processed_rohling = ''
                 for paragraph in processed.split('\n'): # extract the first answer and disregard further generations
                     # check if the paragraph refers to AI's output
                     # otherwise if it's a random user generation terminate
-                    head = paragraph[:2*len(user_tags[0])].lower()
-                    if user_tags[0] in head or user_tags[1] in head or ai_tags[0] in head or ai_tags[1] in head:
+                    if user_tag in paragraph[:2*len(user_tag)].lower():
                         break
                     processed_rohling += '\n'+paragraph
                 # remove possible answers (as the ai continues otherwise by improvising the whole dialogue)
@@ -296,6 +295,7 @@ class client:
                     processed += f' ({duration_in_seconds}s)'
 
                 # check if transformer has lost path from conversation
+                # print('test', processed)
                 if not f'{self.name}:' in processed:
 
                     print('\n\n*** Reset Conversation ***\n\n')

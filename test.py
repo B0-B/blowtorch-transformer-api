@@ -5,6 +5,7 @@ cl = client('llama-2-7b-chat.Q2_K.gguf',
             name='AI',
             device='cpu', 
             model_type="llama",
+            max_new_tokens = 1000,
             context_length = 6000)
 
 cl.setConfig(
@@ -23,5 +24,5 @@ cl.setConfig(
     repetition_penalty=1.1
 )
 
-# cl.chat()
-webUI(cl)
+cl.chat()
+# webUI(cl)
