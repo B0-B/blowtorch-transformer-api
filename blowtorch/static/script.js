@@ -187,25 +187,8 @@ const app = createApp({
             // split paragraphs
             const paragraphs = message.split('\n');
 
-            var lang,
-                code = '';
+            var code = '';
 
-            // Create a new 'xmp' element
-            // var xmp = document.createElement('xmp');
-
-            // Set the 'theme' attribute
-            // xmp.setAttribute('theme', 'united');
-
-            // Set the 'style' attribute
-            // xmp.setAttribute('style');
-
-            // Set the inner text of the 'xmp' element
-            
-
-            // Append the 'xmp' element to the body of the document
-            // msgBox.appendChild(xmp);
-
-            // xmp.textContent = message;
             codeStarted = false;
 
             for (let paragraph of paragraphs) {
@@ -222,10 +205,11 @@ const app = createApp({
                     }
                 }
 
-                // // create new paragraph element and append to messagebox
+                // create new paragraph element and append to messagebox
                 p = document.createElement('p');
                 msgBox.appendChild(p);
-
+                
+                // init code block if detected
                 if (code) {
                     codeStarted = false;
                     p.classList.add('source-code');
