@@ -13,7 +13,6 @@ cl = client('llama-2-7b-chat.Q2_K.gguf',
             name='GPT',
             device='cpu', 
             model_type="llama",
-            max_new_tokens = 1000,
             context_length = 6000)
 
 cl.setConfig(
@@ -22,6 +21,7 @@ cl.setConfig(
         'high performance',
         'accurate', 
         'problem-solving',
+        'answer in markdown format',
         'kind', 
         'eloquent',
         'genuine'

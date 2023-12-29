@@ -14,7 +14,6 @@
 ---
 
 
-
 ## Features
 - simple to install with automated setup and model setup in just 2 lines.
 - Works for Windows (only CPU tested) and Linux (CPU/GPU)

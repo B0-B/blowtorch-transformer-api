@@ -8,10 +8,10 @@ cl = client('llama-2-7b-chat.Q2_K.gguf',
             context_length = 6000)
 
 cl.setConfig(
-    max_new_tokens=1024, 
     char_tags=[
         'skilled like chat GPT', 
         'high performance',
+        'highlights code separated from text',
         'accurate', 
         'problem-solving',
         'kind', 

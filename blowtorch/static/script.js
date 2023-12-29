@@ -50,8 +50,63 @@ const app = createApp({
             return hashHex
 
         },
-        incrementCount() {
+        incrementCount () {
             this.count++
+        },
+        identifyLanguage(string) {
+
+            /* Determines the programming language which is contained in a string.
+            If no code is detected the return is null. */
+
+            var python1 = new RegExp('.*from .* import .*'),
+                python2 = new RegExp('.*/env python3.*'),
+                python3 = new RegExp('.*print(.*).*'),
+                js1 = new RegExp('.*function .*\\(.*\\).*'),
+                js2 = new RegExp('.*console\\.log\\(.*\\).*'),
+                c_cpp = new RegExp('.*#include <.*>.*'),
+                cuda = new RegExp('.*__global__ void .*'),
+                rust = new RegExp('.*fn main\\(\\) {.*'),
+                golang = new RegExp('.*func main\\(\\) {.*'),
+                html = new RegExp('.*<html>.*'),
+                typescript = new RegExp('.*let .*: .*;.*'),
+                bash = new RegExp('.*#!\\/bin\\/bash.*'),
+                powershell = new RegExp('.*Write-Host .*'),
+                r = new RegExp('.*<-.*'),
+                ruby = new RegExp('.*def .*end.*'),
+                perl = new RegExp('.*use strict;.*');
+                unknown = new RegExp('.*```.*');
+            if (string.match(python1) || string.match(python2) || string.match(python3)) {
+                return 'python';
+            } else if (string.match(js1) || string.match(js2)) {
+                return 'javascript';
+            } else if (string.match(c_cpp)) {
+                return 'c/c++';
+            } else if (string.match(cuda)) {
+                return 'cuda';
+            } else if (string.match(rust)) {
+                return 'rust';
+            } else if (string.match(golang)) {
+                return 'golang';
+            } else if (string.match(html)) {
+                return 'html';
+            } else if (string.match(typescript)) {
+                return 'typescript';
+            } else if (string.match(bash)) {
+                return 'bash';
+            } else if (string.match(powershell)) {
+                return 'powershell';
+            } else if (string.match(r)) {
+                return 'R';
+            } else if (string.match(ruby)) {
+                return 'ruby';
+            } else if (string.match(perl)) {
+                return 'perl';
+            } else if (string.match(unknown)) {
+                return 'unknown';
+            } else {
+                return null;
+            }
+
         },
         messageBox (msg, side) {
 
@@ -128,17 +183,68 @@ const app = createApp({
             });
         },
         async render (message, msgBox) {
-            // fill into message box
-            if (this.settings.typeWriterMode) {
-                msgBox.innerHTML = '';
-                for (let i = 0; i < message.length; i++) {
-                    const char = message[i];
-                    msgBox.innerHTML += char;
-                    await this.sleep(.1 / this.inputFillSpeed);
+
+            // split paragraphs
+            const paragraphs = message.split('\n');
+
+            var lang,
+                code = '';
+
+            // Create a new 'xmp' element
+            // var xmp = document.createElement('xmp');
+
+            // Set the 'theme' attribute
+            // xmp.setAttribute('theme', 'united');
+
+            // Set the 'style' attribute
+            // xmp.setAttribute('style');
+
+            // Set the inner text of the 'xmp' element
+            
+
+            // Append the 'xmp' element to the body of the document
+            // msgBox.appendChild(xmp);
+
+            // xmp.textContent = message;
+            codeStarted = false;
+
+            for (let paragraph of paragraphs) {
+
+                // check for coding block
+                if (code || this.identifyLanguage(paragraph)) {
+                    if (paragraph.includes('```') && codeStarted) {
+                        code += paragraph.replace('```', '');
+                        paragraph = code;
+                    } else {
+                        codeStarted = true;
+                        code += paragraph;
+                        continue
+                    }
                 }
-            } else {
-                msgBox.innerHTML = message;
+
+                // // create new paragraph element and append to messagebox
+                p = document.createElement('p');
+                msgBox.appendChild(p);
+
+                if (code) {
+                    codeStarted = false;
+                    p.classList.add('source-code');
+                    code = ''
+                }
+
+                // insert the text to p element
+                if (this.settings.typeWriterMode) {
+                    p.textContent = '';
+                    for (let i = 0; i < paragraph.length; i++) {
+                        p.textContent += paragraph[i];
+                        await this.sleep(.1 / this.inputFillSpeed);
+                    }
+                } else {
+                    p.textContent = paragraph;
+                }
+                
             }
+
         },
         async submit () {
 
@@ -157,8 +263,6 @@ const app = createApp({
             const payload = inputField.value;
             inputField.value = '';
 
-            
-            
             // build message box for chat window
             this.messageBox(payload, 'r');
             
@@ -197,20 +301,9 @@ const app = createApp({
             const answer = response.data.message;
             const formattedAnswer = await this.formatMessage(answer);
             
-            // fill into message box
-            // if (this.settings.typeWriterMode) {
-            //     msgBox.innerHTML = '';
-            //     for (let i = 0; i < formattedAnswer.length; i++) {
-            //         const char = formattedAnswer[i];
-            //         msgBox.innerHTML += char;
-            //         await this.sleep(.1 / this.inputFillSpeed);
-            //     }
-            // } else {
-            //     msgBox.innerHTML = formattedAnswer;
-            // }
+            // render message
             await this.render(formattedAnswer, msgBox);
             
-
             // stop event listener for message box
             resizeObserver.unobserve(msgBox);
             
@@ -235,6 +328,14 @@ const app = createApp({
     async mounted () {
 
         try {
+
+            var python2 = new RegExp('.*print(.*).*');
+            var code = "print('Hello, World!')";
+            if (code.match(python2)) {
+                console.log("The string contains a print statement.");
+            } else {
+                console.log("The string does not contain a print statement.");
+            }
 
             console.log('mounting.');
 

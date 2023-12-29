@@ -234,7 +234,7 @@ class client:
                 break
         
         # initialize new context for chat
-        self.context[id] = f"""A dialog, where a user interacts with {self.name}. {self.name} is {', '.join(char_tags)}, and knows its own limits.\n{username}: Hello, {self.name}.\n{self.name}: Hello! How can I assist you today?\n"""
+        self.context[id] = f"""A dialog, where a user interacts with {self.name}. {self.name} is {', '.join(char_tags)}, and is aware of his limits.\n{username}: Hello, who are you?\n{self.name}: Hello! I am **{self.name}** How can I assist you today?\n"""
         
         while True:
 
@@ -362,7 +362,7 @@ class client:
         # initialize new context by registering sessionId in context object
         if not sessionId in self.context:
             self.log(f'Start new conversation {sessionId}', label='🗯️')
-            self.context[sessionId] = f"""A dialog, where a user interacts with {self.name}. {self.name} is {', '.join(char_tags)}, and knows its own limits.\n{username}: Hello, {self.name}.\n{self.name}: Hello! How can I assist you today?\n"""
+            self.context[sessionId] = f"""A dialog, where a user interacts with {self.name}. {self.name} is {', '.join(char_tags)}, and is aware of his limits.\n{username}: Hello, who are you?\n{self.name}: Hello! I am **{self.name}** How can I assist you today?\n"""
 
         # format input
         formattedInput = f'{username}: {input_text}'
@@ -699,7 +699,6 @@ class webUI ():
         with socketserver.TCPServer((self.host, self.port), handler) as httpd:
             print(f'📡 serving blowtorch UI server at http://{self.host}:{self.port}')
             httpd.serve_forever()
-
 
 class ModelLoadingError (Exception):
 
