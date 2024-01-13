@@ -276,6 +276,7 @@ const app = createApp({
 
             // request a response from API (this is most time consuming)
             const response = await this.request(pkg, '/')
+            msgBox.innerHTML = '';
 
             // enable submit functionality again
             this.submitEnabled = true;
@@ -293,18 +294,18 @@ const app = createApp({
             
         },
         async waitAnimation (messageBox) {
-            console.log('ani 0')
             while (!this.submitEnabled) {
-                console.log('ani 1')
                 if (messageBox.innerHTML == '...') {
-                    console.log('ani 2')
                     messageBox.innerHTML = '.'
                 } else {
-                    console.log('ani 3')
                     messageBox.innerHTML += '.';
                 }
-                console.log('ani 4')
-                await this.sleep(1)
+                for (let i = 0; i < 1000; i++) {
+                    await this.sleep(.001)
+                    if (this.submitEnabled) {
+                        break
+                    }
+                }
             }
         }
 
