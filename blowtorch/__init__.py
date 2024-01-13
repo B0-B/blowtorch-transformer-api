@@ -279,7 +279,7 @@ class client:
                 for paragraph in processed.split('\n'): # extract the first answer and disregard further generations
                     # check if the paragraph refers to AI's output
                     # otherwise if it's a random user generation terminate
-                    if user_tag in paragraph[:2*len(user_tag)].lower():
+                    if user_tag.lower() in paragraph[:2*len(user_tag)].lower():
                         break
                     processed_rohling += '\n'+paragraph
                 # remove possible answers (as the ai continues otherwise by improvising the whole dialogue)
@@ -394,7 +394,7 @@ class client:
         for paragraph in processed.split('\n'): # extract the first answer and disregard further generations
             # check if the paragraph refers to AI's output
             # otherwise if it's a random user generation terminate
-            if user_tag in paragraph[:2*len(user_tag)].lower():
+            if user_tag.lower() in paragraph[:2*len(user_tag)].lower():
                 break
             processed_rohling += '\n'+paragraph
         # remove possible answers (as the ai continues otherwise by improvising the whole dialogue)
