@@ -265,26 +265,15 @@ class client:
                 # print(inference_input)
                 if show_duration: 
                     stopwatch_start = time_ns()
+                
                 raw_output = self.inference(inference_input, **pipe_twargs)
-                # print('raw', raw_output)
+                
                 if show_duration: 
                     stopwatch_stop = time_ns()
                     duration_in_seconds = round((stopwatch_stop - stopwatch_start)*1e-9, 2)
 
                 # post-processing & format
-                processed = raw_output[0]['generated_text']  # unpack
-                processed = processed.replace(inference_input, '').replace('\n\n', '') # remove initial input and empty lines
-                user_tag = f'{username}:'.lower()
-                processed_rohling = ''
-                for paragraph in processed.split('\n'): # extract the first answer and disregard further generations
-                    # check if the paragraph refers to AI's output
-                    # otherwise if it's a random user generation terminate
-                    if user_tag.lower() in paragraph[:2*len(user_tag)].lower():
-                        break
-                    processed_rohling += '\n'+paragraph
-                # remove possible answers (as the ai continues otherwise by improvising the whole dialogue)
-                # override processed variable with rohling
-                processed = processed_rohling.split(username+': ')[0] 
+                processed = self.postProcess(inference_input, raw_output[0]['generated_text'], username)
 
                 # append to context
                 self.context[id] += processed + '\n'
@@ -386,28 +375,7 @@ class client:
         raw_output = self.inference(inference_input, **pipe_twargs)
 
         # post-processing & format
-        processed = raw_output[0]['generated_text']  # unpack
-        processed = processed.replace(inference_input, '').replace('\n\n', '') # remove initial input and empty lines
-        user_tag = f'{username}:'.lower()
-        # aiTag = f'{self.name}:'.lower()
-        processed_rohling = ''
-        for paragraph in processed.split('\n'): # extract the first answer and disregard further generations
-            # check if the paragraph refers to AI's output
-            # otherwise if it's a random user generation terminate
-            if user_tag.lower() in paragraph[:2*len(user_tag)].lower():
-                break
-            processed_rohling += '\n'+paragraph
-        # remove possible answers (as the ai continues otherwise by improvising the whole dialogue)
-        # override processed variable with rohling
-        processed = processed_rohling.split(username+': ')[0] 
-        
-        # check if transformer has lost path from conversation
-        if not f'{self.name}:' in processed:
-            print('\n\n*** Reset Conversation ***\n\n')
-            processed = f"{self.name}: Let's start a new chat!"
-            self.reset()
-            self.context[sessionId] = f"""A dialog, where a user interacts with {self.name}. {self.name} is {', '.join(char_tags)}, and knows its own limits.\n{username}: Hello, {self.name}.\n{self.name}: Hello! How can I assist you today?\n"""
-            return processed
+        processed = self.postProcess(inference_input, raw_output[0]['generated_text'], username)
 
         # append to context
         self.context[sessionId] += processed + '\n'
@@ -480,6 +448,38 @@ class client:
 
         header = f"{__colors__[color]}{label.upper()}{__colors__['nc']} "
         print(header, *stdout)
+
+    def postProcess (self, _input:str, _output:str, username:str) -> str:
+
+        '''
+        Post-processing method which takes raw _input and _output from LLM and returns a post-processed output.
+        '''
+
+        # define processed output
+        processed = _output  
+
+        # remove initial input and empty lines
+        processed = processed.replace(_input, '').replace('\n\n', '') 
+
+        # sort out valid paragraphs
+        user_tag = f'{username}:'.lower()
+        processed_rohling = ''
+        for paragraph in processed.split('\n'): # extract the first answer and disregard further generations
+            # check if the paragraph refers to AI's output
+            # otherwise if it's a random user generation terminate
+            if user_tag in paragraph.lower():
+                break
+            processed_rohling += '\n' + paragraph
+        
+        # override with processed paragraphs
+        processed = processed_rohling
+        
+        # remove possible answers (as the ai continues otherwise by improvising the whole dialogue)
+        # override processed variable with rohling
+        if user_tag in processed_rohling.lower():
+            processed = processed.split(username+': ')[0] 
+        
+        return processed
 
     def ramUsage (self) -> tuple[float, str]:
 
