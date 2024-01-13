@@ -24,7 +24,8 @@
 - Loads models directly from huggingface and store them in local cache.
 - Has automatic fallbacks for different weight formats (e.g. GGML, GGUF, bin, ..)
 
-## Base Requirements    
+## Base Requirements   
+- Python 3.11 
 - A system with a CPU (preferably Ryzen) and `>=16GB` RAM
 - Assumes drivers were correctly installed and GPU is detectable via rocm-smi, nvidia-smi etc.
 - A solid GPT chat requires `>=6GB` of RAM/vRAM depending on device.
