@@ -276,7 +276,7 @@ const app = createApp({
 
             // request a response from API (this is most time consuming)
             const response = await this.request(pkg, '/')
-            msgBox.innerHTML = '';
+            
 
             // enable submit functionality again
             this.submitEnabled = true;
@@ -300,8 +300,8 @@ const app = createApp({
                 } else {
                     messageBox.innerHTML += '.';
                 }
-                for (let i = 0; i < 1000; i++) {
-                    await this.sleep(.001)
+                for (let i = 0; i < 100; i++) {
+                    await this.sleep(.01)
                     if (this.submitEnabled) {
                         break
                     }

@@ -85,15 +85,20 @@ class client:
         else:
             self.name = name
 
+        # select device
+        self.device = 'cpu'
+        self.setDevice(device)
+        self.log(f'will use {device} device.', label='⚠️')
+
         # collect all arguments for model
         _twargs = {}
+        _twargs['device'] = self.device
         if model_file:
             _twargs['model_file'] = model_file
         if gpu_layers:
             _twargs['gpu_layers'] = gpu_layers
         if 'load_in_8bit' in twargs and twargs['load_in_8bit']:
             _twargs['load_in_8bit'] = True
-        _twargs['dtype'] = torch.float16
         for k,v in twargs.items():
             _twargs[k] = v
         
@@ -106,7 +111,7 @@ class client:
             # default transformers
             self.model = transformers.AutoModelForCausalLM.from_pretrained(hugging_face_path, **_twargs)
             # extract tokenizer
-            self.tokenizer = transformers.AutoTokenizer.from_pretrained(hugging_face_path)
+            self.tokenizer = transformers.AutoTokenizer.from_pretrained(hugging_face_path, use_fast=True)
 
         except:
             
@@ -128,18 +133,17 @@ class client:
                     self.log('try loading with hugging path only ...', label='⚙️')
                     
                     self.model = transformers.AutoModelForCausalLM.from_pretrained(hugging_face_path)
-                    self.tokenizer = transformers.AutoTokenizer.from_pretrained(hugging_face_path)
+                    self.tokenizer = transformers.AutoTokenizer.from_pretrained(hugging_face_path, use_fast=True)
 
                 except:
 
                     self.log(f'Cannot load {hugging_face_path} ...', label='🛑')
                     ModelLoadingError(format_exc())
+                    exit()
         
         self.log(f'successfully loaded {hugging_face_path}!', label='✅')
 
-        # select cuda encoding for selected device
-        self.setDevice(device)
-        self.log(f'will use {device} device.', label='⚠️')
+        
 
         # create context object
         self.context = {}
@@ -549,6 +553,7 @@ class client:
             self.device = 'cuda'
         else:
             self.device = 'cpu'
+        torch.set_default_device(self.device)
 
     def tokenize (self, string: str) -> list[int]:
 
