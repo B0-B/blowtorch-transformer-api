@@ -40,8 +40,8 @@
 
 Clone the repository
 
-    git clone git@github.com:B0-B/blowtorch.git
-    cd blowtorch
+    git clone https://github.com/B0-B/blowtorch-transformer-api.git
+    cd blowtorch-transformer-api
 
 Run `build`, this will build binaries and run `pip` setup of `blowtorch` on both platforms, Windows and Linux.
 
@@ -54,6 +54,9 @@ python setup.py install cuda
 
 # just CPU
 python setup.py install cpu
+
+# when permissions are needed (Linux)
+sudo python3 setup.py install rocm
 ```
 </details>  
 
