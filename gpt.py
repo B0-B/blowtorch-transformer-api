@@ -6,7 +6,7 @@ Will be reachable at http://localhost:3000/
 '''
 
 
-from blowtorch import client, webUI
+from blowtorch import client, webUI, console
 
 cl = client('llama-2-7b-chat.Q2_K.gguf', 
             'TheBloke/Llama-2-7B-Chat-GGUF', 
@@ -32,5 +32,6 @@ cl.setConfig(
     repetition_penalty=1.15
 )
 
+console(cl)
 # cl.chat()
-webUI(cl, port=3000)
+# webUI(cl, port=3000)

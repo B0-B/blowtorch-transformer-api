@@ -659,6 +659,18 @@ class client:
 
         return (vram_usage, suffix[ind])
 
+
+class console ():
+
+    '''
+    Class alias for chat method.
+    Will expose the chat in the console.
+    '''
+
+    def __init__(self, _client:client) -> None:
+        _client.chat()
+
+
 class handler (SimpleHTTPRequestHandler):
 
     '''
@@ -741,7 +753,8 @@ class handler (SimpleHTTPRequestHandler):
 class webUI ():
 
     '''
-    Spawns a blowtorch server with a web UI.
+    Spawns a blowtorch server with exposed chat in a web UI.
+
     _client:    client instance
     dir:        path to static directory
     host:       host name

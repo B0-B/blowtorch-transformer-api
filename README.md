@@ -67,6 +67,8 @@ sudo python3 setup.py install rocm
 
 ---
 
+## Getting-Started
+
 By default, if no huggingface model was specified, blowtorch will load a slim model called [Writer/palmyra-small](https://huggingface.co/Writer/palmyra-small), which is good for pure testing:
 
 ```python
@@ -105,8 +107,20 @@ cl.chat(
     repetition_penalty=1.1)
 ```
 
-As shown in this snippet, `chat` takes several arguments: ``max_new_tokens`` allow to control the output length (high values can impact generation time), ``char_tags`` allows to specify attributes or character, ``username`` specifies the user's name.
-The other variables ``do_sample, temperature, repetition_penalty`` are additional ``transformer`` kwargs, that will be accepted as well. Alternatively, the chat arguments can be pre-loaded (often useful) with the ``setConfig`` method
+## Expose Methods for your Chat
+
+The two main ways to expose your chat are
+
+ - **console** - which runs in the console (terminal) of your current runtime.
+ - **webUI** - which starts a webserver with hosted interface to chat in the browser
+
+and can be loaded quickly
+
+```python
+from blowtorch import console, webUI
+```
+
+As shown in this snippet, console can be used as an alias for `chat` but demands setting a config apriori. Alternatively, the chat arguments can be pre-loaded (often useful) with the ``setConfig`` method. Then the chat method needs no args anymore. Note, variables ``do_sample, temperature, repetition_penalty`` are additional ``transformer`` kwargs, that will be accepted as well. 
 
 ```python
 cl = client('llama-2-7b-chat.Q2_K.gguf', 
@@ -132,6 +146,8 @@ cl.setConfig(
 )
 
 cl.chat() # no arguments needed
+
+console(cl) # equivalent call to cl.chat()
 ```
 
 Once the configuration of a client is setup, it may be exposed via a **web server** for a better GUI **(for more info see web UI section)**
