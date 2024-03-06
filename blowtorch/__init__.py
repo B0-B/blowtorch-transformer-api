@@ -164,7 +164,7 @@ class client:
             f'\nTotal Gen. Time: {duration} s'
         )
         
-    def chat (self, username: str='human', char_tags: list[str]=['helpful'], show_duration: bool=True, **pipe_twargs) -> None:
+    def chat (self, username: str='human', char_tags: list[str]=['helpful'], scenario: str=None, show_duration: bool=True, **pipe_twargs) -> None:
 
         '''
         A text-to-text chat loop with context aggregator.
@@ -179,7 +179,7 @@ class client:
         if self.config:
             conf = self.config
             # override standard twargs with existing 
-            # config value and remove from config
+            # config value and remove from config since they are not transformer kwargs
             if 'username' in conf:
                 username = conf['username']
                 conf.pop('username')
@@ -189,6 +189,9 @@ class client:
             if 'show_duration' in conf:
                 show_duration = conf['show_duration']
                 conf.pop('show_duration')
+            if 'scenario' in conf:
+                scenario = conf['scenario']
+                conf.pop('scenario')
             # override pipe twargs with left twargs in config
             pipe_twargs.update(conf)
 
@@ -198,9 +201,11 @@ class client:
             if not id in self.context:
                 break
         
-        # initialize new context for chat
-        self.context[id] = f"""A dialog, where a user interacts with {self.name}. {self.name} is {', '.join(char_tags)}, and is aware of his limits.\n{username}: Hello, who are you?\n{self.name}: Hello! I am **{self.name}** How can I assist you today?\n"""
-        
+        # initialize new context for chat by providing
+        # - either a scenario as a string
+        # - character tags provided as a list of strings
+        self.setContext(id, username, char_tags, scenario)
+
         while True:
 
             try:
@@ -256,7 +261,8 @@ class client:
 
                     self.reset()
 
-                    self.context[id] = f"""A dialog, where a user interacts with {self.name}. {self.name} is {', '.join(char_tags)}, and knows its own limits.\n{username}: Hello, {self.name}.\n{self.name}: Hello! How can I assist you today?\n"""
+                    # reset scenario
+                    self.setContext(id, username, char_tags, scenario)
 
                 # output
                 print(processed)
@@ -287,7 +293,7 @@ class client:
                 
                 break
     
-    def contextInference (self, input_text:str, sessionId: int=0, username: str='human', char_tags: list[str]=['helpful'], **pipe_twargs):
+    def contextInference (self, input_text:str, sessionId: int=0, username: str='human', char_tags: list[str]=['helpful'], scenario: None|str=None, **pipe_twargs):
 
         '''
         Mimicks the chat method, but returns the output.
@@ -310,40 +316,63 @@ class client:
             if 'show_duration' in conf:
                 show_duration = conf['show_duration']
                 conf.pop('show_duration')
+            if 'scenario' in conf:
+                scenario = conf['scenario']
+                conf.pop('scenario')
+
             # override pipe twargs with left twargs in config
             pipe_twargs.update(conf)
 
         # initialize new context by registering sessionId in context object
         if not sessionId in self.context:
             self.log(f'Start new conversation {sessionId}', label='🗯️')
-            self.context[sessionId] = f"""A dialog, where a user interacts with {self.name}. {self.name} is {', '.join(char_tags)}, and is aware of his limits.\n{username}: Hello, who are you?\n{self.name}: Hello! I am **{self.name}** How can I assist you today?\n"""
+            self.setContext(sessionId, username, char_tags, scenario)
 
-        # format input
-        formattedInput = f'{username}: {input_text}'
+        # formatted input
+        # formattedInput = f'{username}: {input_text}'
+            
+        # ---- pre-processing ----    
+        # load current context from history (extract first element i.e. SYS-tag)
+        # https://github.com/facebookresearch/llama/issues/484#issuecomment-1649286345
+        # https://huggingface.co/blog/llama2#how-to-prompt-llama-2
+        messages = [self.context[sessionId][0]]
+        do_strip = False
+        for user_input, response in self.context[sessionId][1:]:
+            user_input = user_input.strip() if do_strip else user_input
+            do_strip = True
+            messages.append(f'{user_input} [/INST] {response.strip()} </s><s>[INST] ')
 
-        # pre-processing
-        if formattedInput[-1] not in punctuation:
-            formattedInput += '. '
+        message = input_text.strip() if do_strip else input_text
+        messages.append(f'{message} [/INST]')
+
+        # construct the final prompt
+        prompt = ''.join(messages)
+
+        # ---- deprecated ----
+        # if formattedInput[-1] not in punctuation:
+        #     formattedInput += '. '
+        # formattedInput = f'<<INST>>{formattedInput}<<INST>>'
         
         # firstly, slice the context feed by the max. allowed size
-        if len(self.context[sessionId]) > self.max_bytes_context_length:
-            inference_input = self.context[sessionId][-self.max_bytes_context_length]
-        else:
-            inference_input = self.context[sessionId]
+        # if len(self.context[sessionId]) > self.max_bytes_context_length:
+        #     inference_input = self.context[sessionId][-self.max_bytes_context_length]
+        # else:
+        #     inference_input = self.context[sessionId]
         
         # then append formatted input to context and inference input
-        self.context[sessionId] += formattedInput + '\n'
-        inference_input += formattedInput + '\n'
+        # self.context[sessionId] += formattedInput + '\n'
+        # inference_input += formattedInput + '\n'
 
-        # inference -> get raw string output
-        # print('inference input', inference_input)
-        raw_output = self.inference(inference_input, **pipe_twargs)
-
+        # inference -> get raw string output and response
+        raw_output = self.inference(prompt, **pipe_twargs)
+        response = raw_output[0]['generated_text']
+        
         # post-processing & format
-        processed = self.postProcess(inference_input, raw_output[0]['generated_text'], username)
+        processed = self.postProcess(prompt, raw_output[0]['generated_text'], username)
+        processed_tagged = f'{processed}</s><s>'
 
         # append to context
-        self.context[sessionId] += processed + '\n'
+        self.context[sessionId].append(processed_tagged)
 
         return processed
 
@@ -529,6 +558,7 @@ class client:
 
         '''
         Post-processing method which takes raw _input and _output from LLM and returns a post-processed output.
+        This is only raw message and string processing, no transformer tags are added. 
         '''
 
         # define processed output
@@ -602,6 +632,21 @@ class client:
         torch.cuda.empty_cache()
         gc.collect()
     
+    def setContext (self, id: str, username: str, char_tags: list[str]=['helpful'], scenario: None|str=None) -> None:
+
+        '''
+        Sets context provided by character tags (list) or scenario (str).
+        which will be initialized in the current chat id.
+        '''
+        
+        if scenario:
+            ctx = scenario
+        else:
+            ctx = f"""This is a dialog, where a user interacts with {self.name}.\n {self.name} is {', '.join(char_tags)}, and is aware of his limits. \n{username}: Hello, who are you?\n{self.name}: Hello! I am **{self.name}** How can I assist you today?"""
+        
+        # initialize new chat according to https://huggingface.co/blog/llama2#how-to-prompt-llama-2
+        self.context[id] = [f'<s>[INST] <<SYS>>\n{ctx}\n<</SYS>>\n\n']
+
     def setConfig (self, **twargs) -> None:
 
         '''
