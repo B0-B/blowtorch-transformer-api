@@ -62,7 +62,7 @@ class client:
     **twargs            custom trasformer key word arguments
     '''
 
-    def __init__ (self, model_file:str|None=None, hugging_face_path:str|None=None, device:str='gpu', gpu_layers:int=0, 
+    def __init__ (self, model_file:str|None=None, hugging_face_path:str|None=None, device:str='gpu', device_id:None|int=None,
                   name: str|None=None, verbose: bool=False, silent: bool=False, **twargs) -> None:
 
         # stdout console logging
@@ -91,59 +91,20 @@ class client:
         self.log(f'will use {device} device.', label='⚠️')
 
         # collect all arguments for model
+        #   removed model_file as deprecated in transformers but not in ctransformers
         _twargs = {}
-        _twargs['device'] = self.device
-        if model_file:
-            _twargs['model_file'] = model_file
-        if gpu_layers:
-            _twargs['gpu_layers'] = gpu_layers
-        if 'load_in_8bit' in twargs and twargs['load_in_8bit']:
-            _twargs['load_in_8bit'] = True
         for k,v in twargs.items():
             _twargs[k] = v
+        if 'load_in_8bit' in twargs and twargs['load_in_8bit']:
+            _twargs['load_in_8bit'] = True
+        
         
         # -- load model and tokenizer --
-        try:
-
-            # some models can be quantized to 8-bit precision
-            self.log('try loading transformers with assembled arguments ...', label='⚙️')
-
-            # default transformers
-            self.model = transformers.AutoModelForCausalLM.from_pretrained(hugging_face_path, **_twargs)
-            # extract tokenizer
-            self.tokenizer = transformers.AutoTokenizer.from_pretrained(hugging_face_path, use_fast=True)
-
-        except:
-            
-            # ctransfomers for builds with GGUF weight format
-            # load with input twargs only, since gpu parameters are not known
-            try:
-
-                self.log('try loading with ctransformers ...', label='⚙️')
-                
-                self.model = ctransformers.AutoModelForCausalLM.from_pretrained(hugging_face_path, model_file=model_file, gpu_layers=gpu_layers, hf=True, **twargs)
-                self.tokenizer = ctransformers.AutoTokenizer.from_pretrained(self.model)
-
-            except:
-                print('*** ERROR ***')
-                print_exc()
-                # for some models there is no specfic path
-                try:
-                    
-                    self.log('try loading with hugging path only ...', label='⚙️')
-                    
-                    self.model = transformers.AutoModelForCausalLM.from_pretrained(hugging_face_path)
-                    self.tokenizer = transformers.AutoTokenizer.from_pretrained(hugging_face_path, use_fast=True)
-
-                except:
-
-                    self.log(f'Cannot load {hugging_face_path} ...', label='🛑')
-                    ModelLoadingError(format_exc())
-                    exit()
-        
-        self.log(f'successfully loaded {hugging_face_path}!', label='✅')
-
-        
+        model_loaded = self.loadModel(model_file, hugging_face_path, device, device_id, **twargs)
+        if not model_loaded:
+            exit()
+        else:
+            self.log(f'successfully loaded {hugging_face_path}!', label='✅')
 
         # create context object
         self.context = {}
@@ -440,6 +401,117 @@ class client:
         '''
         print('pipe twargs:', pipe_twargs)
         return self.pipe(input_text, **pipe_twargs)
+
+    def loadModel (self, model_file:str|None=None, hugging_face_path:str|None=None, device:str='gpu', device_id:None|int=None, **twargs) -> bool:
+
+        '''
+        Loads model onto selected device, up to a specific GPU.
+
+        device          device gpu/cuda, cpu
+        device_id       None (default), 0, 1, ...
+        twargs          Transformer arguments
+        model_file      only for ctransformers
+
+        Returns boolean to indicate success.
+        '''
+
+        # ==== GPU approach ====
+        if device.lower() in ['gpu', 'cuda']:
+
+            # select the proper device
+            if device_id:
+                cuda_arg = f'cuda:{device_id}'
+            else:
+                cuda_arg = 'cuda'
+            
+            self.log(f'try loading {hugging_face_path} onto GPU', label='⚙️')
+
+            # try loading with auto device map and assembled arguments
+            try:
+
+                self.log('try loading transformers with auto device map and provided arguments ...', label='⚙️')
+
+                # default transformers
+                self.model = transformers.AutoModelForCausalLM.from_pretrained(hugging_face_path, device_map=cuda_arg, **twargs)
+
+                # extract tokenizer
+                self.tokenizer = transformers.AutoTokenizer.from_pretrained(hugging_face_path, use_fast=True)
+                self.log(f'Successfully loaded {hugging_face_path} on GPU', label='✅')
+                return True
+
+            except:
+
+                print_exc()
+            
+            # try fixed revision and dont trust remote code 
+            # this approach is suitable for Llama-2-7b-Chat-GPTQ
+            try:
+
+                self.log('try loading {hugging_face_path} with fixed revision and mistrust remote code ...', label='⚙️')
+
+                # override kwargs
+                twargs['revision'] = 'main'
+                twargs['trust_remote_code'] = False
+
+                # default transformers
+                self.model = transformers.AutoModelForCausalLM.from_pretrained(hugging_face_path, device_map=cuda_arg, **twargs)
+
+                # extract tokenizer
+                self.tokenizer = transformers.AutoTokenizer.from_pretrained(hugging_face_path, use_fast=True)
+                self.log(f'Successfully loaded {hugging_face_path} on GPU', label='✅')
+                return True
+
+            except:
+
+                print_exc()
+            
+            # try loading without arguments
+            try:
+                self.log(f'try loading {hugging_face_path} blank (no args) ...', label='⚙️')
+                transformers.AutoModelForCausalLM.from_pretrained(hugging_face_path, device_map=cuda_arg)
+                self.log(f'Model was loaded but may behave differently since no arguments were provied. The arguments were dropped to enable the onloading to {device.upper()}.', label='⚠️')
+                return True
+            except:
+                print_exc()
+
+            self.log(f'failed loading onto GPU', label='🛑')
+
+
+        # ==== CPU approach ====
+        try:
+
+            self.log('try loading transformers on CPU using provided arguments ...', label='⚙️')
+
+            # default transformers
+            self.model = transformers.AutoModelForCausalLM.from_pretrained(hugging_face_path, model_file=model_file, device_map="cpu", **twargs)
+
+            # extract tokenizer
+            self.tokenizer = transformers.AutoTokenizer.from_pretrained(hugging_face_path, use_fast=True)
+            self.log(f'Successfully loaded {hugging_face_path} on CPU', label='✅')
+            return True
+
+        except:
+
+            print_exc()
+
+        # ctransfomers for builds with GGUF weight format
+        # load with input twargs only, since gpu parameters are not known
+        try:
+
+            self.log(f'try loading {hugging_face_path} with ctransformers ...', label='⚙️')
+            
+            self.model = ctransformers.AutoModelForCausalLM.from_pretrained(hugging_face_path, model_file=model_file, hf=True, **twargs)
+            self.tokenizer = ctransformers.AutoTokenizer.from_pretrained(self.model)
+            self.log(f'Successfully loaded {hugging_face_path} with ctransformers on CPU', label='✅')
+            return True
+        
+        except:
+
+            print_exc()
+        
+        self.log(f'failed loading {hugging_face_path} onto CPU as well.', label='🛑')
+        
+        return False
 
     def log (self, *stdout: any, label='info', color='c') -> None:
 
