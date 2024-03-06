@@ -210,62 +210,66 @@ class client:
 
             try:
 
-                inputs = ''
+                # inputs = ''
 
                 # new input from user
-                inputs += input(f'{username}: ')
+                new_input = input(f'{username}: ')
 
                 # format input
-                formattedInput = f'{username}: {inputs}'
+                # formattedInput = f'{username}: {new_input}'
 
                 # pre-processing
-                if formattedInput[-1] not in punctuation:
-                    formattedInput += '. '
+                # if formattedInput[-1] not in punctuation:
+                #     formattedInput += '. '
                 
                 # append formatted input to context
-                self.context[id] += formattedInput + '\n'
+                # self.context[id] += formattedInput + '\n'
 
-                # extract inference payload from context
-                if len(self.context[id]) > self.max_bytes_context_length:
-                    inference_input = self.context[id][-self.max_bytes_context_length]
-                else:
-                    inference_input = self.context[id]
-
-                # inference -> get raw string output
-                # print(inference_input)
+                # # extract inference payload from context
+                # if len(self.context[id]) > self.max_bytes_context_length:
+                #     inference_input = self.context[id][-self.max_bytes_context_length]
+                # else:
+                #     inference_input = self.context[id]
+                
+                # start duration measurement
                 if show_duration: 
                     stopwatch_start = time_ns()
                 
-                raw_output = self.inference(inference_input, **pipe_twargs)
+                # inference -> get raw string output
+                # forward the new input through context pipeline
+                processed_output = self.contextInference(new_input, sessionId=id, username=username, 
+                                                         char_tags=char_tags, scenario=scenario, **pipe_twargs)
                 
+                # stop watch
                 if show_duration: 
                     stopwatch_stop = time_ns()
                     duration_in_seconds = round((stopwatch_stop - stopwatch_start)*1e-9, 2)
 
                 # post-processing & format
-                processed = self.postProcess(inference_input, raw_output[0]['generated_text'], username)
+                # processed = self.postProcess(inference_input, raw_output[0]['generated_text'], username)
 
                 # append to context
-                self.context[id] += processed + '\n'
-                
+                # self.context[id] += processed + '\n'
+                formatted_output = f'{self.name}: {processed_output}'
+
                 # now add time duration (only for printing but not context)
                 # otherwise transformer would generate random times
                 if show_duration:
-                    processed += f' ({duration_in_seconds}s)'
+                    formatted_output += f' ({duration_in_seconds}s)'
 
                 # check if transformer has lost path from conversation
                 # print('test', processed)
-                if not f'{self.name}:' in processed:
+                # if not f'{self.name}:' in processed:
 
-                    print('\n\n*** Reset Conversation ***\n\n')
+                #     print('\n\n*** Reset Conversation ***\n\n')
 
-                    self.reset()
+                #     self.reset()
 
-                    # reset scenario
-                    self.setContext(id, username, char_tags, scenario)
+                #     # reset scenario
+                #     self.setContext(id, username, char_tags, scenario)
 
                 # output
-                print(processed)
+                print(formatted_output)
                 
             except KeyboardInterrupt:
                 
@@ -314,7 +318,6 @@ class client:
                 char_tags = conf['char_tags']
                 conf.pop('char_tags')
             if 'show_duration' in conf:
-                show_duration = conf['show_duration']
                 conf.pop('show_duration')
             if 'scenario' in conf:
                 scenario = conf['scenario']
