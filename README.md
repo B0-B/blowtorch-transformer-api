@@ -30,7 +30,14 @@
 - Assumes drivers were correctly installed and GPU is detectable via rocm-smi, nvidia-smi etc.
 - A solid GPT chat requires `>=6GB` of RAM/vRAM depending on device.
 
-
+## Tested
+|Vendor|Device|Model|Quality Assurance|
+|-|-|-|-|
+|AMD|GPU|MI300x|✅|
+|AMD|GPU|RDNA3|✅|
+|AMD|GPU|RDNA2|✅|
+|AMD|GPU|RDNA1|✅|
+|AMD|CPU|Ryzen 3950x|✅|
 
 <!-- SETUP -->
 <details>
@@ -173,51 +180,8 @@ webUI(cl)
 ```
 
 
-</details>
-
-
-
-
-
-<!-- BENCHMARKS -->
-<details>
-<summary style="font-size:2rem">Benchmarks</summary>
-
----
-
-`blowtorch` comes with a built-in benchmark feature. Assuming a configured client, loaded with a model of choice, the bench method can be called for performance metrics and memory usage. Note that for proper measurement and better estimate, the benchmark performs a 512 token generation which can take around a minute.
-
-```python
-cl = client('llama-2-7b-chat.Q2_K.gguf', 
-            'TheBloke/Llama-2-7B-Chat-GGUF', 
-            name='AI',
-            device='cpu', 
-            model_type="llama",
-            context_length = 6000)
-
-cl.bench()
-```
-
-    info: start benchmark ...
-
-    -------- benchmark results --------
-    Device: AMD64 Family 23 Model 113 Stepping 0, AuthenticAMD
-    RAM Usage: 3.9 gb
-    vRAM Usage: 0 b
-    Max. Token Window: 512
-    Tokens Generated: 519
-    Bytes Generated: 1959 bytes
-    Token Rate: 6.701 tokens/s
-    Data Rate: 25.294 bytes/s
-    Bit Rate: 202.352 bit/s
-    TPOT: 149.231 ms/token
-    Total Gen. Time: 77.448 s
-
-The results show that the total RAM consumption (of the total python process) takes around $3.9GB$.
 
 </details>
-
-
 
 
 <!-- CLI -->
@@ -226,7 +190,7 @@ The results show that the total RAM consumption (of the total python process) ta
 
 ---
 
-Pre-trained models like e.g. Llama2 can directly be ported from huggingface hub, and subsequently propagate inputs or inference, through the model.
+Pre-trained models like e.g. Llama2 can directly be ported from huggingface hub, and subsequently propagate inputs or inference, through the model. ``Note:`` that the inference method is the lowest level and will not pre- or post process, track the context. These steps will be considered with the ``contextInference`` method which is used by chat and webUI.
 
 
 ```python
@@ -247,9 +211,61 @@ Human: can you explain what a dejavu is?
 Llama-2-7B-Chat-GGML: [{'generated_text': 'can you explain what a dejavu is?\n\nAnswer: A deja vu is a French term that refers to a feeling of familiarity or recognition that cannot be explained. It\'s the sensation of having already experienced an event, situation, or place, even though you know that you have not. Deja vu can also be described as a "'}]
 ```
 
-The cli is a useful method is intended for testing forward-propagation and will not track context, or be reasonable (rather halucinating a bit).
+The cli is a useful method is intended for testing forward-propagation but since it is not tracking context, or be reasonable (rather halucinating) or wrapped in tags, the output will simply be a random completion of the input.
 
 </details>
+
+
+
+
+<!-- API EXAMPLES -->
+<details>
+<summary style="font-size:2rem">Chat API</summary>
+
+---
+
+
+The following is an example of loading a specific model file (from huggingface card) in **GGUF** format. This will be automatically loaded with [ctransformers](https://github.com/marella/ctransformers) in a single line. 
+
+blowtorch's chat method tracks the context, so the LLM can argue and even write code.
+For better output increase the max token size.
+
+```python
+from blowtorch import client
+client('llama-2-7b-chat.Q2_K.gguf', 'TheBloke/Llama-2-7B-Chat-GGUF', 'cpu', model_type="llama").chat(max_new_tokens=512, do_sample=False, temperature=0.8, repetition_penalty=1.1)
+```
+
+    Human: please create a python script which loads a huggingface model into transformers.
+    AI Assistant: Of course! To load a Hugging Face model into Transformers, you will need to use the `transformers` library. Here's an example of how you can do this:
+    ```
+    import pandas as pd
+    from transformers import AutoTokenizer, AutoModelForSequenceClassification# Load the Hugging Face model
+    model_name = "bert-base-uncased"
+    tokenizer = AutoTokenizer.from_pretrained(model_name)# Create a new dataset for training
+    train_data = pd.DataFrame({"text": ["This is a test sentence."], "label": [1]})# Train the model
+    model = AutoModelForSequenceClassification.from_pretrained(tokenizer, train_data=train_data)
+    ```
+    Please let me know if you have any questions or need further assistance.
+    (82.27s)
+
+An attempt to write a letter:
+
+    human: Write a letter of a russia soldier who writes a letter from germany in 1945 to his mother in Russia.
+
+    Llama-2-7B-Chat-GGUF:  Unterscheidung von der Ukraine und Belarus.
+    Dear Mother,
+    I hope this letter finds you in good health and spirits. I am writing to you from Germany, where I have been deployed with my unit since the beginning of this year. It has been a long and 
+    difficult journey, but I am proud to be serving my country in this time of need.
+    The war in Europe is coming to an end, and we are close to victory. I can see the end of the tunnel, and I know that soon we will be able to return home and rebuild our country. I am proud of what we have accomplished so far, and I know that our sacrifices will not be forgotten.
+    But even in the midst of all this chaos and destruction, I cannot help but think of you and father back in Russia. I miss you both dearly, and I wish you were here with me to share in this momentous occasion. I know that you are proud of me too, and I hope that you are taking care of yourselves and staying safe during these difficult times.
+    Mother, I want you to know that I have seen many things on this journey that I will never forget. The sights and sounds of war are something that no one should ever have to experience, but I know that it is something that I will always carry with me. I have seen the worst of humanity, but I have also seen the best. I have seen people come together in ways that I never thought possible, and I have seen the resilience and strength of the human spirit.
+    I know that this war will soon be over, and I will be returning home to you and father. I cannot wait to hold you both in my arms again and to start rebuilding our lives together. Until then, know that I love you both more than anything in the world, and that I will always be with you in spirit.
+    Your loving son,
+    [Soldier's Name]
+</details>
+
+
+
 
 
 
@@ -257,7 +273,7 @@ The cli is a useful method is intended for testing forward-propagation and will 
 <details>
 <summary style="font-size:2rem">Custom GPT Chat</summary>
 
----
+## Char Tags
 
 The chat function of blowtorch can create a gpt-like chatbot, with a specified character.
 
@@ -323,7 +339,27 @@ also we can play a game of **guess who**
     human: Yes, the person is from ancient times!
     Arnold: *excitedly* Oh boy, this is getting interesting! *nods* So, this person lived over 2000 years ago? *asks innocently* And what else can you tell me about them? *curious expression*
     human: Yes!
+
+## Scenarios
+Besides just providing char_tags to give your chat bot attributes or shape his character a bit,
+blowtorch also provides a more in-depth scenario to give users more freedom to create their main frame. 
+
+```python 
+myScenario = '''This is the scene in the movie "heat", where you, Robert Deniro (with caricaturized behaviour), and I am Al Pacino, are meeting face-to-face for the first time in a diner.'''
+
+cl.setConfig(
+    max_new_tokens=128,
+    scenario=myScenario,  # <-- add the scenario to config instead of char_tags
+    username='Mario',
+    do_sample=True, 
+    temperature=0.85, 
+    repetition_penalty=1.15,
+    top_p=0.95, 
+    top_k=60,
+)
+```
 </details>
+
 
 
 <!-- WEB UI  -->
@@ -363,51 +399,43 @@ webUI(cl, port=3000)
 </details>
 
 
-<!-- API EXAMPLES -->
+
+
+<!-- BENCHMARKS -->
 <details>
-<summary style="font-size:2rem">Chat API Examples</summary>
+<summary style="font-size:2rem">Benchmarks</summary>
 
 ---
 
-
-The following is an example of loading a specific model file (from huggingface card) in **GGUF** format. This will be automatically loaded with [ctransformers](https://github.com/marella/ctransformers) in a single line. 
-
-blowtorch's chat method tracks the context, so the LLM can argue and even write code.
-For better output increase the max token size.
+`blowtorch` comes with a built-in benchmark feature. Assuming a configured client, loaded with a model of choice, the bench method can be called for performance metrics and memory usage. Note that for proper measurement and better estimate, the benchmark performs a 512 token generation which can take around a minute.
 
 ```python
-from blowtorch import client
-client('llama-2-7b-chat.Q2_K.gguf', 'TheBloke/Llama-2-7B-Chat-GGUF', 'cpu', model_type="llama").chat(max_new_tokens=512, do_sample=False, temperature=0.8, repetition_penalty=1.1)
+cl = client('llama-2-7b-chat.Q2_K.gguf', 
+            'TheBloke/Llama-2-7B-Chat-GGUF', 
+            name='AI',
+            device='cpu', 
+            model_type="llama",
+            context_length = 6000)
+
+cl.bench()
 ```
 
-    Human: please create a python script which loads a huggingface model into transformers.
-    AI Assistant: Of course! To load a Hugging Face model into Transformers, you will need to use the `transformers` library. Here's an example of how you can do this:
-    ```
-    import pandas as pd
-    from transformers import AutoTokenizer, AutoModelForSequenceClassification# Load the Hugging Face model
-    model_name = "bert-base-uncased"
-    tokenizer = AutoTokenizer.from_pretrained(model_name)# Create a new dataset for training
-    train_data = pd.DataFrame({"text": ["This is a test sentence."], "label": [1]})# Train the model
-    model = AutoModelForSequenceClassification.from_pretrained(tokenizer, train_data=train_data)
-    ```
-    Please let me know if you have any questions or need further assistance.
-    (82.27s)
+    info: start benchmark ...
 
-An attempt to write a letter:
+    -------- benchmark results --------
+    Device: AMD64 Family 23 Model 113 Stepping 0, AuthenticAMD
+    RAM Usage: 3.9 gb
+    vRAM Usage: 0 b
+    Max. Token Window: 512
+    Tokens Generated: 519
+    Bytes Generated: 1959 bytes
+    Token Rate: 6.701 tokens/s
+    Data Rate: 25.294 bytes/s
+    Bit Rate: 202.352 bit/s
+    TPOT: 149.231 ms/token
+    Total Gen. Time: 77.448 s
 
-    human: Write a letter of a russia soldier who writes a letter from germany in 1945 to his mother in Russia.
+The results show that the total RAM consumption (of the total python process) takes around $3.9GB$.
 
-    Llama-2-7B-Chat-GGUF:  Unterscheidung von der Ukraine und Belarus.
-    Dear Mother,
-    I hope this letter finds you in good health and spirits. I am writing to you from Germany, where I have been deployed with my unit since the beginning of this year. It has been a long and 
-    difficult journey, but I am proud to be serving my country in this time of need.
-    The war in Europe is coming to an end, and we are close to victory. I can see the end of the tunnel, and I know that soon we will be able to return home and rebuild our country. I am proud of what we have accomplished so far, and I know that our sacrifices will not be forgotten.
-    But even in the midst of all this chaos and destruction, I cannot help but think of you and father back in Russia. I miss you both dearly, and I wish you were here with me to share in this momentous occasion. I know that you are proud of me too, and I hope that you are taking care of yourselves and staying safe during these difficult times.
-    Mother, I want you to know that I have seen many things on this journey that I will never forget. The sights and sounds of war are something that no one should ever have to experience, but I know that it is something that I will always carry with me. I have seen the worst of humanity, but I have also seen the best. I have seen people come together in ways that I never thought possible, and I have seen the resilience and strength of the human spirit.
-    I know that this war will soon be over, and I will be returning home to you and father. I cannot wait to hold you both in my arms again and to start rebuilding our lives together. Until then, know that I love you both more than anything in the world, and that I will always be with you in spirit.
-    Your loving son,
-    [Soldier's Name]
 </details>
-
-
 

@@ -11,7 +11,7 @@ line about your weight you realize your defeat and you let Peach go, after we le
 
 
 
-from blowtorch import client, console
+from blowtorch import client, console, webUI
 
 cl = client('llama-2-7b-chat.Q2_K.gguf', 
             'TheBloke/Llama-2-7B-Chat-GGUF', 
@@ -30,3 +30,5 @@ cl.setConfig(
     top_p=0.95, 
     top_k=60,
 )
+
+console(cl)
