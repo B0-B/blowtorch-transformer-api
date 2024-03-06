@@ -210,26 +210,8 @@ class client:
 
             try:
 
-                # inputs = ''
-
                 # new input from user
                 new_input = input(f'{username}: ')
-
-                # format input
-                # formattedInput = f'{username}: {new_input}'
-
-                # pre-processing
-                # if formattedInput[-1] not in punctuation:
-                #     formattedInput += '. '
-                
-                # append formatted input to context
-                # self.context[id] += formattedInput + '\n'
-
-                # # extract inference payload from context
-                # if len(self.context[id]) > self.max_bytes_context_length:
-                #     inference_input = self.context[id][-self.max_bytes_context_length]
-                # else:
-                #     inference_input = self.context[id]
                 
                 # start duration measurement
                 if show_duration: 
@@ -245,9 +227,6 @@ class client:
                     stopwatch_stop = time_ns()
                     duration_in_seconds = round((stopwatch_stop - stopwatch_start)*1e-9, 2)
 
-                # post-processing & format
-                # processed = self.postProcess(inference_input, raw_output[0]['generated_text'], username)
-
                 # append to context
                 # self.context[id] += processed + '\n'
                 formatted_output = f'{self.name}: {processed_output}'
@@ -256,17 +235,6 @@ class client:
                 # otherwise transformer would generate random times
                 if show_duration:
                     formatted_output += f' ({duration_in_seconds}s)'
-
-                # check if transformer has lost path from conversation
-                # print('test', processed)
-                # if not f'{self.name}:' in processed:
-
-                #     print('\n\n*** Reset Conversation ***\n\n')
-
-                #     self.reset()
-
-                #     # reset scenario
-                #     self.setContext(id, username, char_tags, scenario)
 
                 # output
                 print(formatted_output)
@@ -350,21 +318,6 @@ class client:
 
         # construct the final prompt
         prompt = ''.join(messages)
-
-        # ---- deprecated ----
-        # if formattedInput[-1] not in punctuation:
-        #     formattedInput += '. '
-        # formattedInput = f'<<INST>>{formattedInput}<<INST>>'
-        
-        # firstly, slice the context feed by the max. allowed size
-        # if len(self.context[sessionId]) > self.max_bytes_context_length:
-        #     inference_input = self.context[sessionId][-self.max_bytes_context_length]
-        # else:
-        #     inference_input = self.context[sessionId]
-        
-        # then append formatted input to context and inference input
-        # self.context[sessionId] += formattedInput + '\n'
-        # inference_input += formattedInput + '\n'
 
         # inference -> get raw string output and response
         raw_output = self.inference(prompt, **pipe_twargs)
