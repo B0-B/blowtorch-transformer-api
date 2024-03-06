@@ -126,7 +126,7 @@ class client:
         self.log('start benchmark ...', label='⏱️')
 
         stopwatch_start = time_ns()
-        raw_output = self.inference('please write a generic long letter', token_length)
+        raw_output = self.inference('please write a generic long letter', max_new_tokens=token_length)
         stopwatch_stop = time_ns()
         duration = (stopwatch_stop - stopwatch_start) * 1e-9
 
