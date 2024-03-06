@@ -299,6 +299,8 @@ class client:
             self.log(f'Start new conversation {sessionId}', label='🗯️')
             self.setContext(sessionId, username, char_tags, scenario)
 
+        
+
         # formatted input
         # formattedInput = f'{username}: {input_text}'
             
@@ -324,13 +326,13 @@ class client:
         response = raw_output[0]['generated_text']
         
         # post-processing & format
-        processed = self.postProcess(prompt, raw_output[0]['generated_text'], username)
-        processed_tagged = f'{processed}</s><s>'
+        processed_output = self.postProcess(prompt, raw_output[0]['generated_text'], username)
+        # processed_tagged = f'{processed}</s><s>'
 
-        # append to context
-        self.context[sessionId].append(processed_tagged)
+        # append q&a tuple to context
+        self.context[sessionId].append((input_text, processed_output))
 
-        return processed
+        return processed_output
 
     def generate (self, input_text:str, max_new_tokens:int=128) -> str:
 
