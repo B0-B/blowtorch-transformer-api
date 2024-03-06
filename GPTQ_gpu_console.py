@@ -6,14 +6,14 @@ Will be reachable at http://localhost:3000/
 '''
 
 
-from blowtorch import client, webUI, console
+from blowtorch import client, console
 
-cl = client('llama-2-7b-chat.Q2_K.gguf', 
-            'TheBloke/Llama-2-7B-Chat-GGUF', 
+cl = client(hugging_face_path='TheBloke/Llama-2-7b-Chat-GPTQ', 
             name='GPT',
-            device='cpu', 
+            device='gpu', 
             model_type="llama",
-            context_length = 6000)
+            trust_remote_code=False,
+            revision="main")
 
 cl.setConfig(
     char_tags=[
@@ -28,10 +28,10 @@ cl.setConfig(
     ], 
     username='User',
     do_sample=True, 
+    top_p=0.95, 
+    top_k=40,
     temperature=0.85, 
     repetition_penalty=1.15
 )
 
 console(cl)
-# cl.chat()
-# webUI(cl, port=3000)
