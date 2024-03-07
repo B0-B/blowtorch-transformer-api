@@ -434,7 +434,7 @@ class client:
             # this approach is suitable for Llama-2-7b-Chat-GPTQ
             try:
 
-                self.log('try loading {hugging_face_path} with fixed revision and mistrust remote code ...', label='⚙️')
+                self.log(f'try loading {hugging_face_path} with fixed revision and mistrust remote code ...', label='⚙️')
 
                 # override kwargs
                 twargs['revision'] = 'main'
@@ -470,7 +470,7 @@ class client:
             self.log('try loading transformers on CPU using provided arguments ...', label='⚙️')
 
             # default transformers
-            self.model = transformers.AutoModelForCausalLM.from_pretrained(hugging_face_path, model_file=model_file, device_map="cpu", **twargs)
+            self.model = transformers.AutoModelForCausalLM.from_pretrained(hugging_face_path, device_map="cpu", **twargs)
 
             # extract tokenizer
             self.tokenizer = transformers.AutoTokenizer.from_pretrained(hugging_face_path, use_fast=True)

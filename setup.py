@@ -42,7 +42,7 @@ setup(
     packages=['blowtorch'],
     # py_modules=['blowtorch.py'],
     install_requires=[
-        'transformers==4.31.0',
+        'transformers',
         'ctransformers==0.2.27',
         'accelerate==0.21.0',
         'h5py==3.9.0',

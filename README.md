@@ -341,16 +341,23 @@ also we can play a game of **guess who**
     human: Yes!
 
 ## Scenarios
-Besides just providing char_tags to give your chat bot attributes or shape his character a bit,
-blowtorch also provides a more in-depth scenario to give users more freedom to create their main frame. 
+Besides the ``char_tags`` to give your chat bot attributes or shape his character a bit,
+blowtorch also provides a more in-depth initialization option called ``scenario`` to give users more freedom to create their personalized main frame. An example of a scenario where a film scene is depicted for a cosplay between the user and the AI
 
 ```python 
 myScenario = '''This is the scene in the movie "heat", where you, Robert Deniro (with caricaturized behaviour), and I am Al Pacino, are meeting face-to-face for the first time in a diner.'''
 
+cl = client('llama-2-7b-chat.Q2_K.gguf', 
+            'TheBloke/Llama-2-7B-Chat-GGUF', 
+            name='Deniro',
+            device='cpu', 
+            model_type="llama",
+            context_length = 6000)
+
 cl.setConfig(
     max_new_tokens=128,
     scenario=myScenario,  # <-- add the scenario to config instead of char_tags
-    username='Mario',
+    username='Pacino',
     do_sample=True, 
     temperature=0.85, 
     repetition_penalty=1.15,
