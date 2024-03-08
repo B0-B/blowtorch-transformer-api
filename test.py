@@ -11,7 +11,7 @@ Remember you are a true Jedi master with an encouraging spirit.'''
 
 from blowtorch import client, console, webUI
 
-cl = client(hugging_face_path='TheBloke/Llama-2-7B-Chat-GGUF', 
+cl = client(hugging_face_path='NousResearch/Llama-2-7b-chat-hf', 
             name='Yoda',
             device='gpu',   # <-- select default device to be gpu
             device_id=0,   # <-- select specific GPU id
