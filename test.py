@@ -14,9 +14,8 @@ from blowtorch import client, console, webUI
 cl = client(hugging_face_path='NousResearch/Llama-2-7b-chat-hf', 
             name='Yoda',
             device='gpu',   # <-- select default device to be gpu
-            device_id=0,   # <-- select specific GPU id
-            model_type="llama",
-            context_length = 6000)
+            #device_id=0,   # <-- select specific GPU id
+            model_type="llama")
 
 cl.setConfig(
     max_new_tokens=256,

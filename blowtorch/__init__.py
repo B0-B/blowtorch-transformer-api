@@ -100,6 +100,8 @@ class client:
         
         
         # -- load model and tokenizer --
+        self.model = None
+        self.tokenizer = None
         model_loaded = self.loadModel(model_file, hugging_face_path, device, device_id, **twargs)
         if not model_loaded:
             exit()
