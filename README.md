@@ -76,7 +76,9 @@ sudo python3 setup.py install rocm
 
 ## Getting-Started
 
-By default, if no huggingface model was specified, blowtorch will load a slim model called [Writer/palmyra-small](https://huggingface.co/Writer/palmyra-small), which is good for pure testing:
+Blowtorch builds on the client analogy where the model and necessary parameters are held by one object ``blowtorch.client``. The client is the main object which will allow to do all manipulations and settings for our model, like LLM transformer parameters, a name and character etc.
+
+By default, if no huggingface model was specified, blowtorch will load a slim model called [Writer/palmyra-small](https://huggingface.co/Writer/palmyra-small), which is good for pure testing and can be considered the simplest test
 
 ```python
 from blowtorch import client
@@ -85,19 +87,20 @@ client(device='cpu').cli()
 
 Generally speaking, LLMs are designed to continue (predict) word sequences, thus loading an LLM and generating from inputs like a started sentence, it will try to finish the sentence. For a chat-like experience, blowtorch exploits and tracks the context and initializes the chat with attributes (and character), which allows the AI to track the context and reason accordingly.
 
-First, to download and run an arbitrary huggingface model, even with specified checkpoint file
+First, to download and run an arbitrary huggingface model
 
 ```python
-cl = client('llama-2-7b-chat.Q2_K.gguf', 
-            'TheBloke/Llama-2-7B-Chat-GGUF', 
-            name='AI',
-            device='cpu', 
+cl = client(hugging_face_path='TheBloke/Llama-2-7b-Chat-GPTQ', 
+            name='GPT',
+            device='gpu', # <-- select GPU as device
+            device_id=0,  # <-- optionally select the GPU id
             model_type="llama",
-            max_new_tokens = 1000,
-            context_length = 6000)
+            trust_remote_code=False,
+            revision="main")
 ```
 also, you can give your client a name, model_type (should match the current model), and it's possible to pre-define some transformers kwargs, but those can be overriden by ``cli`` or ``chat`` method kwargs.
-For a gpt-chat in the console one can use the ``chat`` method
+
+For a gpt-chat in the console one should either use the ``chat`` method
 
 ```python
 cl.chat(
@@ -108,26 +111,28 @@ cl.chat(
         'expert in programing',
         'obedient'
     ], 
-    username='Human',
+    username='Human',  
     do_sample=False, 
     temperature=0.8, 
     repetition_penalty=1.1)
 ```
 
-## Expose Methods for your Chat
+or expose with an expose object.
+
+## Expose Objects for your Chat
 
 The two main ways to expose your chat are
 
- - **console** - which runs in the console (terminal) of your current runtime.
- - **webUI** - which starts a webserver with hosted interface to chat in the browser
+ - **console** - which runs in the console (terminal) of your current runtime. *Alias for client.chat.*
+ - **webUI** - which starts a webserver with hosted UI in the browser
 
-and can be loaded quickly
+which can be imported in your python project
 
 ```python
 from blowtorch import console, webUI
 ```
 
-As shown in this snippet, console can be used as an alias for `chat` but demands setting a config apriori. Alternatively, the chat arguments can be pre-loaded (often useful) with the ``setConfig`` method. Then the chat method needs no args anymore. Note, variables ``do_sample, temperature, repetition_penalty`` are additional ``transformer`` kwargs, that will be accepted as well. 
+As shown in this snippet, ``blowtorch.console`` object can be used as an alias for `blowtorch.chat` method but demands setting a config apriori. The chat arguments can also be pre-loaded (often useful) with the ``setConfig`` method. Then all other methods (like chat) or exposing objects require no arguments anymore. Note, variables ``do_sample, temperature, repetition_penalty`` are additional ``transformer`` kwargs, that will be accepted as well. 
 
 ```python
 cl = client('llama-2-7b-chat.Q2_K.gguf', 
@@ -138,6 +143,7 @@ cl = client('llama-2-7b-chat.Q2_K.gguf',
             max_new_tokens = 1000,
             context_length = 6000)
 
+# it is recommended to first set the config
 cl.setConfig(
     char_tags=[
         'carring comrade',
@@ -152,7 +158,7 @@ cl.setConfig(
     repetition_penalty=1.1
 )
 
-cl.chat() # no arguments needed
+cl.chat() # no arguments needed anymore
 
 console(cl) # equivalent call to cl.chat()
 ```
@@ -179,9 +185,13 @@ from blowtorch import webUI
 webUI(cl)
 ```
 
+## Expose Objects for your Chat
 
 
 </details>
+
+
+
 
 
 <!-- CLI -->
@@ -342,10 +352,10 @@ also we can play a game of **guess who**
 
 ## Scenarios
 Besides the ``char_tags`` to give your chat bot attributes or shape his character a bit,
-blowtorch also provides a more in-depth initialization option called ``scenario`` to give users more freedom to create their personalized main frame. An example of a scenario where a film scene is depicted for a cosplay between the user and the AI
+the ``setConfig`` method provides a more in-depth initialization option called ``scenario`` to give users more freedom to create their personalized main frame. An example of a scenario where a film scene is depicted for a cosplay between the user and the AI
 
 ```python 
-myScenario = '''This is the scene in the movie "heat", where you, Robert Deniro (with caricaturized behaviour), and I am Al Pacino, are meeting face-to-face for the first time in a diner.'''
+myScenario = '''This is the scene in the movie "heat", where you, Robert Deniro (with caricaturized behaviour), and me, Al Pacino, are meeting face-to-face for the first time in a diner.'''
 
 cl = client('llama-2-7b-chat.Q2_K.gguf', 
             'TheBloke/Llama-2-7B-Chat-GGUF', 
