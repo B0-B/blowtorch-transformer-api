@@ -85,9 +85,10 @@ class client:
         else:
             self.name = name
 
-        # select device
+        # select device and device_id and initialize with method
         self.device = 'cpu'
-        self.setDevice(device)
+        self.device_id = device_id
+        self.setDevice(device, self.device_id)
         self.log(f'will use {device} device.', label='⚠️')
 
         # collect all arguments for model
@@ -153,7 +154,8 @@ class client:
         # print results
         print('\n-------- benchmark results --------')
         print(
-            f'Device: {self.getDeviceName()}',
+            f'Device ({self.device}): {self.getDeviceName()}',
+            f'\nDevice ID used: {0 if self.device == "cpu" else torch.cuda.current_device()}',
             f'\nRAM Usage: {memory_usage[0]} {memory_usage[1]}',
             f'\nvRAM Usage: {vram_usage[0]} {vram_usage[1]}',
             f'\nMax. Token Window: {token_length}',
@@ -267,7 +269,7 @@ class client:
                 
                 break
     
-    def contextInference (self, input_text:str, sessionId: int=0, username: str='human', char_tags: list[str]=['helpful'], scenario: None|str=None, **pipe_twargs):
+    def contextInference (self, input_text:str, sessionId: int=0, username: str='human', char_tags: list[str]=['helpful'], scenario: None|str=None, **pipe_twargs) -> str:
 
         '''
         Mimicks the chat method, but returns the output.
@@ -372,14 +374,17 @@ class client:
                 device = 'Unknown CPU'
         else:
             # gpu test if the SMIs are installed
-            try:
-                line_as_bytes = subprocess.check_output("rocm-smi --showproductname", shell=True)
-            except:
-                try:
-                    line_as_bytes = subprocess.check_output("nvidia-smi -L", shell=True)
-                except:
-                    line_as_bytes = b'Unknown GPU'
-            device = line_as_bytes.decode("utf-8")
+            # try:
+            #     line_as_bytes = subprocess.check_output("rocm-smi --showproductname", shell=True)
+            # except:
+            #     try:
+            #         line_as_bytes = subprocess.check_output("nvidia-smi -L", shell=True)
+            #     except:
+            #         line_as_bytes = b'Unknown GPU'
+            # device = line_as_bytes.decode("utf-8")
+
+            device = torch.cuda.get_device_name(0)
+
 
         return device
     
@@ -620,17 +625,47 @@ class client:
 
         self.config = twargs
 
-    def setDevice (self, device: str) -> None:
+    def setDevice (self, device: str, device_id: int|None=None) -> None:
 
         '''
-        Sets the device torch should use (cuda, cpu).
+        Sets the device used by torch (cuda, cpu).
         '''
 
         if device in ['gpu', 'cuda']:
-            self.device = 'cuda'
+            self.device = f'cuda:{device_id}' if device_id else 'cuda'
         else:
             self.device = 'cpu'
+        
+        # override torch default device
         torch.set_default_device(self.device)
+
+    def showDevices (self) -> None:
+
+        '''
+        Independent method which scans for all devices.
+        This method does not ensure that torch will be able to use them,
+        and should be used for debugging to check if drivers/kernel 
+        can locate and identify the hardware.
+        '''
+        
+        try:
+            device = platform.processor()
+        except:
+            device = 'Unknown CPU'
+        self.log('-------- CPU --------', 'device')
+        self.log(device, 'device')
+
+        # gpu test if the SMIs are installed
+        try:
+            line_as_bytes = subprocess.check_output("rocm-smi --showproductname", shell=True)
+        except:
+            try:
+                line_as_bytes = subprocess.check_output("nvidia-smi -L", shell=True)
+            except:
+                line_as_bytes = b'Unknown GPU'
+        device = line_as_bytes.decode("utf-8")
+        self.log('-------- GPU --------', 'device')
+        self.log(device, 'device')
 
     def tokenize (self, string: str) -> list[int]:
 
