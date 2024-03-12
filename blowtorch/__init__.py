@@ -470,6 +470,10 @@ class client:
 
             self.log(f'failed loading onto GPU', label='🛑')
 
+            # if gpu approach fails set the torch default device to CPU
+            # before trying to attempt loading the model on CPU
+            self.setDevice('cpu')
+
 
         # ==== CPU approach ====
         try:
