@@ -32,11 +32,11 @@
 
 ## Dependency for ctransformers [Default]
 
-In order for ctransformers to properly load GGUF files, we need to respect versioning, the setup will install the following versions, afterwards transformers can be updated accordingly with `pip install transformers` if needed. This is because bowtorch uses ctransformers in parallel for CPU specific model formats.
+In order for ``ctransformers`` to properly load GGUF files the setup needs to respect versioning, therefore the default setup will install the following freezed versions below. Afterwards transformers can be updated accordingly with `pip install transformers` for GPU if needed. This is because ctransformers changed the supported models and demands an older version of transformers. blowtorch uses ctransformers in parallel to transformers for CPU-specific model formats and better inference performance.
 
-|ctransformers|transformers|
-|-|-|-|
-|0.2.27|4.31.0|
+|**library**|ctransformers|transformers|accelerate|
+|-|-|-|-|
+|**version**|0.2.27|4.31.0|0.21.0|
 
 ## Tested
 |Vendor|Device|Model|Quality Assurance|
