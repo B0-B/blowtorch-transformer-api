@@ -679,6 +679,16 @@ class client:
 
         return self.tokenizer.encode(string)
     
+    def updateConfig (self, **twargs) -> None:
+
+        '''
+        Should be used when setConfig was used to update the inference parameters on the fly.
+        '''
+
+        for k, v in twargs.items():
+
+            self.config[k] = v
+
     def vramUsage (self) -> tuple[float, str]:
 
         '''
@@ -773,14 +783,16 @@ class handler (SimpleHTTPRequestHandler):
 
             # extract session id so the client can locate the context
             sessionId = data['sessionId'] 
+
+            # update token size
+            maxNewTokens = data['maxNewTokens']
+            self.__client__.updateConfig(max_new_tokens=maxNewTokens)
             
             # do inference
             message = data['message']
-            maxNewTokens = data['maxNewTokens']
             output = self.__client__.contextInference(
                 message, 
-                sessionId=sessionId,
-                max_new_tokens=maxNewTokens
+                sessionId=sessionId
             )
 
             self.__client__.log('send:', output, label='📨')

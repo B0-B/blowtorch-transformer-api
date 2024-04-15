@@ -30,4 +30,5 @@ cl.setConfig(
     top_k=60,
 )
 
-console(cl)
+webUI(cl)
+# console(cl)
