@@ -30,6 +30,14 @@
 - Assumes drivers were correctly installed and GPU is detectable via rocm-smi, nvidia-smi etc.
 - A solid GPT chat requires `>=6GB` of RAM/vRAM depending on device.
 
+## Dependency for ctransformers [Default]
+
+In order for ctransformers to properly load GGUF files, we need to respect versioning, the setup will install the following versions, afterwards transformers can be updated accordingly with `pip install transformers` if needed. This is because bowtorch uses ctransformers in parallel for CPU specific model formats.
+
+|ctransformers|transformers|
+|-|-|-|
+|0.2.27|4.31.0|
+
 ## Tested
 |Vendor|Device|Model|Quality Assurance|
 |-|-|-|-|
