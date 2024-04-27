@@ -9,7 +9,7 @@
 
 </h1>
 
-<p align=center>A bootstrap LLM loader for CPU/GPU inference with fully customizable GPT API.</p>
+<p align=center>LLM bootstrap loader for local CPU/GPU inference with fully customizable chat.</p>
 
 ---
 

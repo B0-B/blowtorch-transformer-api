@@ -58,7 +58,7 @@ class client:
     gpu_layers          number of layers to offload gpus (0 for pure cpu usage)
     name                the name of the client
     verbose             if true will disable all warnings
-    silent              if true will diable all console output
+    silent              if true will disable all console output
     **twargs            custom trasformer key word arguments
     '''
 
@@ -88,7 +88,7 @@ class client:
         # select device and device_id and initialize with method
         self.device = 'cpu'
         self.device_id = device_id
-        self.setDevice(device, self.device_id)
+        self.selectDevice(device, self.device_id)
         self.log(f'will use {device} device.', label='⚠️')
 
         # collect all arguments for model
@@ -163,16 +163,13 @@ class client:
             # override pipe twargs with left twargs in config
             pipe_twargs.update(conf)
 
-        # generate unique chat identifier from ns timestamp
-        while True:
-            id = str(time_ns())
-            if not id in self.context:
-                break
+        # generate unique chat identifier 
+        id = self.newSessionId()
         
         # initialize new context for chat by providing
         # - either a scenario as a string
         # - character tags provided as a list of strings
-        self.setContext(id, username, char_tags, scenario)
+        self.newConversation(id, username, char_tags, scenario)
 
         while True:
 
@@ -215,24 +212,6 @@ class client:
 
                 print_exc()
 
-    def cli (self, **pipe_twargs) -> None:
-
-        '''
-        A command line inference loop.
-        Helpful to interfere with the model via command line.
-        '''
-
-        while True:
-
-            try:
-
-                inputs = input('Human: ')
-                print('\n' + self.name + ':', self.inference(inputs, **pipe_twargs))
-
-            except KeyboardInterrupt:
-                
-                break
-    
     def contextInference (self, input_text: str, sessionId: int=0, username: str='human', char_tags: list[str]=['helpful'],
                           scenario: None|str=None, **pipe_twargs) -> str:
 
@@ -266,22 +245,10 @@ class client:
         # convert twargs to llama.cpp if cpu is used
         pipe_twargs = self.__convert_twargs__(pipe_twargs)
 
-        # Check if conversation context was initialized for sessionId.
+        # (fuse): initialize new context by registering sessionId 
+        # in context object if none exists already.
         if not sessionId in self.context:
-
-            # First set the beginning system prompt, from 
-            # provided scenario or construct scenrio from char_tags
-            if scenario:
-                sys_prompt = scenario
-            else:
-                if self.llama_version == 'llama-2':
-                    sys_prompt = f"""This is a dialog, where a user interacts with {self.name}.\n {self.name} is {', '.join(char_tags)}, and is aware of his limits. \n{username}: Hello, who are you?\n{self.name}: Hello! I am **{self.name}** How can I assist you today?"""
-                elif self.llama_version == 'llama-3':
-                    sys_prompt = f"""Your name is {self.name}, you are an assistant which is {', '.join(char_tags)}."""
-
-            # Initialize new context with sessionId
-            self.log(f'Start new conversation {sessionId}', label='🗯️')
-            self.context[sessionId] = [self.__format_prompt__(sys_prompt, system_prompt=True)]
+            self.newConversation(sessionId, username, char_tags, scenario)
 
         # Gather a formatted conversation with formatted system_prompt.
         formatted_conversation = [self.context[sessionId][0]]
@@ -307,13 +274,14 @@ class client:
         # -> inference
         raw_output = self.inference(formatted_prompt, **pipe_twargs)
         
+        # try to extract the generated text
         try:
             formatted_response = raw_output[0]['generated_text']
         except KeyError:
             # fallback for llama.cpp
             formatted_response = raw_output['choices'][0]['text']
 
-        # extract response from formatted output
+        # prettify the output, clean artifacts etc.
         response = self.__post_process__(formatted_prompt, formatted_response)
 
         # Append newly received input, output tuple to context
@@ -321,10 +289,19 @@ class client:
 
         return response
 
-    def generate (self, input_text:str, max_new_tokens:int=128) -> str:
+    def generate (self, input_text:str, max_new_tokens:int=128, echo: bool=True) -> str:
 
         '''
+        Alternative forward propagation.
         Generates output directly from model.
+
+        [Parameters]
+        input_text          User input as str.
+        max_new_tokens      The max. tokens to generate.
+        echo                Whether user input should be embedded in output.
+
+        [Return] 
+        The model output as string. 
         '''
 
         inputs = self.tokenizer(input_text, return_tensors="pt")
@@ -339,37 +316,10 @@ class client:
         outputString = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
 
         # remove the prepended input
-        outputString = outputString.replace(input_text, '')
+        if not echo:
+            outputString = outputString.replace(input_text, '')
 
         return outputString
-
-    def getDeviceName (self) -> str:
-
-        '''
-        Returns the currently selected device name of CPU or GPU, 
-        depending on how the client was which device was set.
-        '''
-
-        if self.device == 'cpu':
-            try:
-                device = platform.processor()
-            except:
-                device = 'Unknown CPU'
-        else:
-            # gpu test if the SMIs are installed
-            # try:
-            #     line_as_bytes = subprocess.check_output("rocm-smi --showproductname", shell=True)
-            # except:
-            #     try:
-            #         line_as_bytes = subprocess.check_output("nvidia-smi -L", shell=True)
-            #     except:
-            #         line_as_bytes = b'Unknown GPU'
-            # device = line_as_bytes.decode("utf-8")
-
-            device = torch.cuda.get_device_name(0)
-
-
-        return device
     
     def inference (self, input_text:str, **pipe_twargs) -> list[dict[str,str]]:
 
@@ -455,7 +405,7 @@ class client:
 
             # if gpu approach fails set the torch default device to CPU
             # before trying to attempt loading the model on CPU
-            self.setDevice('cpu')
+            self.selectDevice('cpu')
 
 
         # ==== CPU approach ====
@@ -527,7 +477,7 @@ class client:
     def reset (self) -> None:
 
         '''
-        Resets the weights of a model and clears the cache from device.
+        Resets the the parameters of the model, clears the current device cache and garbage.
         '''
 
         # reset weights to default
@@ -536,7 +486,7 @@ class client:
             self.model.reset_parameters()
         except:
             try:
-                # ctransformers
+                # llama.cpp
                 self.model.reset()
             except:
                 self.log('cannot reset model:', format_exc(), label='🛑')
@@ -545,22 +495,52 @@ class client:
         torch.cuda.empty_cache()
         gc.collect()
     
-    def setContext (self, id: str, username: str, char_tags: list[str]=['helpful'], scenario: None|str=None) -> None:
+    def newConversation (self, id: str, username: str, char_tags: list[str]=['helpful'], scenario: None|str=None) -> None:
 
         '''
-        Sets context provided by character tags (list) or scenario (str).
-        which will be initialized in the current chat id.
+        Initializes a new context for conversation in client.context.
+        The new conversation will be auto-labeled with an id.
+        Note: this method does not verify if the id exists already and will simply override.
         '''
         
-        # set beginning scenario
+        # First set the beginning system prompt, from 
+        # provided scenario or construct scenrio from char_tags
         if scenario:
-            ctx = scenario
+            sys_prompt = scenario
         else:
-            ctx = f"""This is a dialog, where a user interacts with {self.name}.\n {self.name} is {', '.join(char_tags)}, and is aware of his limits. \n{username}: Hello, who are you?\n{self.name}: Hello! I am **{self.name}** How can I assist you today?"""
-        
-        # initialize new chat according to https://huggingface.co/blog/llama2#how-to-prompt-llama-2
-        self.context[id] = [f'<s>[INST] <<SYS>>\n{ctx}\n<</SYS>>\n\n']
+            if self.llama_version == 'llama-2':
+                sys_prompt = f"""This is a dialog, where a user interacts with {self.name}.\n {self.name} is {', '.join(char_tags)}, and is aware of his limits. \n{username}: Hello, who are you?\n{self.name}: Hello! I am **{self.name}** How can I assist you today?"""
+            elif self.llama_version == 'llama-3':
+                sys_prompt = f"""Your name is {self.name}, you are an assistant which is {', '.join(char_tags)}."""
 
+        # Initialize new context with sessionId
+        self.log(f'Start new conversation {id}', label='🗯️')
+        self.context[id] = [self.__format_prompt__(sys_prompt, system_prompt=True)]
+
+    def newSessionId (self) -> str:
+
+        '''
+        Generates a new random and unique session id from ns timestamp.
+
+        [Return]
+        Session id as string.
+        '''
+        
+        # generate unique chat identifier from ns timestamp
+        while True:
+            id = str(time_ns())
+            if not id in self.context:
+                return id
+
+    def tokenize (self, string: str) -> list[int]:
+
+        '''
+        Tokenizes a string via the currently loaded tokenizer.
+        '''
+
+        return self.tokenizer.encode(string)
+    
+    # ---- Config Handling ----
     def setConfig (self, **twargs) -> None:
 
         '''
@@ -574,7 +554,35 @@ class client:
 
         self.config = twargs
 
-    def setDevice (self, device: str, device_id: int|None=None) -> None:
+    def updateConfig (self, **twargs) -> None:
+
+        '''
+        Should be used when setConfig was used to update the inference parameters on the fly.
+        '''
+
+        for k, v in twargs.items():
+
+            self.config[k] = v
+
+    # ---- Device API ----
+    def getDeviceName (self) -> str:
+
+        '''
+        Returns the currently selected device name of CPU or GPU, 
+        depending on how the client was which device was set.
+        '''
+
+        if self.device == 'cpu':
+            try:
+                device = platform.processor()
+            except:
+                device = 'Unknown CPU'
+        else:
+            device = torch.cuda.get_device_name(0)
+        
+        return device
+    
+    def selectDevice (self, device: str, device_id: int|None=None) -> None:
 
         '''
         Sets the device used by torch (cuda, cpu).
@@ -615,24 +623,6 @@ class client:
         device = line_as_bytes.decode("utf-8")
         self.log('-------- GPU --------', 'device')
         self.log(device, 'device')
-
-    def tokenize (self, string: str) -> list[int]:
-
-        '''
-        Tokenizes a string via the currently loaded tokenizer.
-        '''
-
-        return self.tokenizer.encode(string)
-    
-    def updateConfig (self, **twargs) -> None:
-
-        '''
-        Should be used when setConfig was used to update the inference parameters on the fly.
-        '''
-
-        for k, v in twargs.items():
-
-            self.config[k] = v
 
     # ---- Conversion Methods ----
     def __convert_twargs__ (self, twargs: dict) -> dict:
@@ -783,7 +773,7 @@ class client:
             f'\nTPOT: {tpot} ms/token',
             f'\nTotal Gen. Time: {duration} s'
         )
-        
+    
     def ramUsage (self) -> tuple[float, str]:
 
         '''
@@ -831,77 +821,6 @@ class client:
         vram_usage = round(vram_usage, 1)
 
         return (vram_usage, suffix[ind])
-
-    # [Deprecated]
-    def contextInference_deprecated (self, input_text: str, sessionId: int=0, username: str='human', char_tags: list[str]=['helpful'], scenario: None|str=None, **pipe_twargs) -> str:
-
-        '''
-        [Deprecated]
-        Mimicks the chat method, but returns the output.
-        Used for webUI inference, will behave the same as chat method.
-
-        If setConfig was call priorly twargs, the pre-defined twargs will be overriden.
-        '''
-
-        # clarify twargs by merging with config (if enabled)
-        if self.config:
-            conf = self.config
-            # override standard twargs with existing 
-            # config value and remove from config
-            if 'username' in conf:
-                username = conf['username']
-                conf.pop('username')
-            if 'char_tags' in conf:
-                char_tags = conf['char_tags']
-                conf.pop('char_tags')
-            if 'show_duration' in conf:
-                conf.pop('show_duration')
-            if 'scenario' in conf:
-                scenario = conf['scenario']
-                conf.pop('scenario')
-
-            # override pipe twargs with left twargs in config
-            pipe_twargs.update(conf)
-
-        # initialize new context by registering sessionId in context object
-        if not sessionId in self.context:
-            self.log(f'Start new conversation {sessionId}', label='🗯️')
-            self.setContext(sessionId, username, char_tags, scenario)
-
-        
-
-        # formatted input
-        # formattedInput = f'{username}: {input_text}'
-            
-        # ---- pre-processing ----    
-        # load current context from history (extract first element i.e. SYS-tag)
-        # https://github.com/facebookresearch/llama/issues/484#issuecomment-1649286345
-        # https://huggingface.co/blog/llama2#how-to-prompt-llama-2
-        messages = [self.context[sessionId][0]]
-        do_strip = False
-        for user_input, response in self.context[sessionId][1:]:
-            user_input = user_input.strip() if do_strip else user_input
-            do_strip = True
-            messages.append(f'{user_input} [/INST] {response.strip()} </s><s>[INST] ')
-
-        message = input_text.strip() if do_strip else input_text
-        messages.append(f'{message} [/INST]')
-
-        # construct the final prompt
-        prompt = ''.join(messages)
-
-        # inference -> get raw string output and response
-        raw_output = self.inference(prompt, **pipe_twargs)
-        response = raw_output[0]['generated_text']
-        
-        # post-processing & format
-        processed_output = self.__post_process__(prompt, raw_output[0]['generated_text'], username)
-        # processed_tagged = f'{processed}</s><s>'
-
-        # append q&a tuple to context
-        self.context[sessionId].append((input_text, processed_output))
-
-        return processed_output
 
 class console ():
 
