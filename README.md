@@ -9,15 +9,37 @@
 
 </h1>
 
-*A bootstrap LLM loader for CPU/GPU inference with fully customizable GPT API.*
+<p align=center>A bootstrap LLM loader for CPU/GPU inference with fully customizable GPT API.</p>
 
 ---
 
+## To give a taste..
+```python
+from blowtorch import client, webUI
+
+USERNAME = 'Steve'
+
+# create state-of-the-art chat bot
+myFancyChatBot = client('Meta-Llama-3-8B-Instruct.Q2_K.gguf', 
+            'MaziyarPanahi/Meta-Llama-3-8B-Instruct-GGUF', 
+            llama_version="llama-3")
+
+myChatBot.setConfig(username=USERNAME)
+
+# expose chat to browser
+webUI(cl)
+```
+
+## Updates
+### April 27, 2024
+-  **Now LLaMA-3 support! See the [example](https://github.com/B0-B/blowtorch-transformer-api/tree/main/examples/llama3_GPT.py).** 🦙🦙🦙 
+-  Setup will install latest [xformers](https://github.com/facebookresearch/xformers).
 
 ## Features
-- simple to install with automated setup and model setup in just 2 lines.
+- Simple to install with automated setup and model setup in just 2 lines.
+- Supports various LLaMA versions for prompting in different formats and manages corresponding arguments (transformers, llama.cpp).
 - Works for Windows (only CPU tested) and Linux (CPU/GPU)
-- PyTorch and transformer compliant - extendable with same keyword arguments from e.g. transformer.pipeline
+- PyTorch and transformer compliant - extendable with same keyword arguments from e.g. [``transformer.pipeline``](https://github.com/huggingface/transformers/blob/v4.40.1/src/transformers/pipelines/__init__.py#L562)
 - Creates a customizabe chat partner with specified character from scratch ready for usage.
 - Easy to understand, with few objects which can handle any case.
 - Can load models to CPU using RAM, or GPU, or both by offloading a specified amount of layers to GPU vRAM.
@@ -30,18 +52,20 @@
 - Assumes drivers were correctly installed and GPU is detectable via rocm-smi, nvidia-smi etc.
 - A solid GPT chat requires `>=6GB` of RAM/vRAM depending on device.
 
-## Dependency for ctransformers [Default]
+## Dependency for performant CPU inference [Default]
 
-In order for ``ctransformers`` to properly load GGUF files the setup needs to respect versioning, therefore the default setup will install the following freezed versions below. Afterwards transformers can be updated accordingly with `pip install transformers` for GPU if needed. This is because ctransformers changed the supported models and demands an older version of transformers. blowtorch uses ctransformers in parallel to transformers for CPU-specific model formats and better inference performance.
+The older state of this project involved ``ctransformers`` as GGML library for load GGUF files. However due to inactivity and incompatibility with new **LLaMA-3** model the setup changed to [``llama-cpp-python``](https://github.com/abetlen/llama-cpp-python) project. This python API provides c-bindings for [llama.cpp](https://github.com/ggerganov/llama.cpp). 
 
-|**library**|ctransformers|transformers|accelerate|
-|-|-|-|-|
-|**version**|0.2.27|4.31.0|0.21.0|
+**blowtorch** uses ``llama.cpp`` in parallel to classic transformers for more and better onboarding options with CPUs and quantized models.
 
-## Tested
+|**library**|ctransformers|transformers|accelerate|xformers|
+|-|-|-|-|-|
+|**version**|deprecated|latest|0.21.0|latest|
+
+## Tests
 |Vendor|Device|Model|Quality Assurance|
 |-|-|-|-|
-|AMD|GPU|MI300x|✅|
+|AMD|GPU|MI300x|   ✅|
 |AMD|GPU|RDNA3|✅|
 |AMD|GPU|RDNA2|✅|
 |AMD|GPU|RDNA1|✅|

@@ -24,7 +24,8 @@ from os import getpid, chdir, getcwd
 
 # ML
 import torch
-import transformers, ctransformers
+import transformers
+from llama_cpp import Llama
 
 # server
 import _socket
@@ -34,7 +35,6 @@ from http.server import SimpleHTTPRequestHandler
 
 
 __root__ = Path(__file__).parent
-
 
 
 # __________ logging __________
@@ -62,7 +62,7 @@ class client:
     **twargs            custom trasformer key word arguments
     '''
 
-    def __init__ (self, model_file:str|None=None, hugging_face_path:str|None=None, device:str='gpu', device_id:None|int=None,
+    def __init__ (self, model_file:str|None=None, hugging_face_path:str|None=None, llama_version: str='llama-2', device:str='gpu', device_id:None|int=None,
                   name: str|None=None, verbose: bool=False, silent: bool=False, **twargs) -> None:
 
         # stdout console logging
@@ -99,10 +99,22 @@ class client:
         if 'load_in_8bit' in twargs and twargs['load_in_8bit']:
             _twargs['load_in_8bit'] = True
         
+        # denote library/module used
+        self.llm_base_module = 'transformers'
+
+        # try to detect llama version
+        self.llama_version = llama_version
+        for temp in ['llama-2', 'llama-3']:
+            if temp in hugging_face_path.lower() and llama_version != temp:
+                self.log(f'recognized that "{hugging_face_path}" is a {temp} model, but provided the llama_version is "{llama_version}" which could cause problems while prompting!', label='⚠️')
+                break
+            elif temp in hugging_face_path.lower() and llama_version == temp:
+                break
         
-        # -- load model and tokenizer --
+        # -- load model and tokenizer and instantiate pipeline --
         self.model = None
         self.tokenizer = None
+        self.pipe = None
         model_loaded = self.loadModel(model_file, hugging_face_path, device, device_id, **twargs)
         if not model_loaded:
             exit()
@@ -118,56 +130,8 @@ class client:
         self.config = None
 
         # create pipeline
-        self.pipe = transformers.pipeline("text-generation", model=self.model, tokenizer=self.tokenizer)
+        # self.pipe = transformers.pipeline("text-generation", model=self.model, tokenizer=self.tokenizer)
 
-    def bench (self, token_length: int=512) -> None:
-
-        '''
-        A quick benchmark of the loaded model.
-        '''
-
-        self.log('start benchmark ...', label='⏱️')
-
-        stopwatch_start = time_ns()
-        raw_output = self.inference('please write a generic long letter', max_new_tokens=token_length)
-        stopwatch_stop = time_ns()
-        duration = (stopwatch_stop - stopwatch_start) * 1e-9
-
-        # Get the memory usage of the current process
-        memory_usage = self.ramUsage() # memory occupied by the process in total
-        vram_usage = self.vramUsage() # memory allocated b torch on gpu
-
-        # unpack
-        string = raw_output[0]['generated_text']
-
-        # count tokens
-        tokens = len(self.tokenize(string))
-        bytes = len(string)
-
-        # compute statistics
-        token_rate = round(tokens/duration, 3)
-        tpot = round(1e3 / token_rate, 3) # time per output token in ms
-        data_rate = round(bytes/duration, 3)
-        bit_rate = round(data_rate*8, 3)
-        duration = round(duration, 3)
-
-        # print results
-        print('\n-------- benchmark results --------')
-        print(
-            f'Device ({self.device}): {self.getDeviceName()}',
-            f'\nDevice ID used: {0 if self.device == "cpu" else torch.cuda.current_device()}',
-            f'\nRAM Usage: {memory_usage[0]} {memory_usage[1]}',
-            f'\nvRAM Usage: {vram_usage[0]} {vram_usage[1]}',
-            f'\nMax. Token Window: {token_length}',
-            f'\nTokens Generated: {tokens}',
-            f'\nBytes Generated: {bytes } bytes'
-            f'\nToken Rate: {token_rate} tokens/s', 
-            f'\nData Rate: {data_rate} bytes/s',
-            f'\nBit Rate: {bit_rate} bit/s',
-            f'\nTPOT: {tpot} ms/token',
-            f'\nTotal Gen. Time: {duration} s'
-        )
-        
     def chat (self, username: str='human', char_tags: list[str]=['helpful'], scenario: str=None, show_duration: bool=True, **pipe_twargs) -> None:
 
         '''
@@ -241,7 +205,7 @@ class client:
                     formatted_output += f' ({duration_in_seconds}s)'
 
                 # output
-                print(formatted_output)
+                print(formatted_output, end='\n')
                 
             except KeyboardInterrupt:
                 
@@ -269,18 +233,21 @@ class client:
                 
                 break
     
-    def contextInference (self, input_text:str, sessionId: int=0, username: str='human', char_tags: list[str]=['helpful'], scenario: None|str=None, **pipe_twargs) -> str:
+    def contextInference (self, input_text: str, sessionId: int=0, username: str='human', char_tags: list[str]=['helpful'],
+                          scenario: None|str=None, **pipe_twargs) -> str:
 
         '''
-        Mimicks the chat method, but returns the output.
-        Used for webUI inference, will behave the same as chat method.
-
-        If setConfig was call priorly twargs, the pre-defined twargs will be overriden.
+        Inference with context tracking.
+        Supports LLaMA-2 and LLaMA-3 prompting formats.
+        Auto formatting of prompts and post processing included.
+        For benchmarks better use client.inference.
         '''
 
         # clarify twargs by merging with config (if enabled)
         if self.config:
+
             conf = self.config
+
             # override standard twargs with existing 
             # config value and remove from config
             if 'username' in conf:
@@ -289,54 +256,70 @@ class client:
             if 'char_tags' in conf:
                 char_tags = conf['char_tags']
                 conf.pop('char_tags')
-            if 'show_duration' in conf:
-                conf.pop('show_duration')
             if 'scenario' in conf:
                 scenario = conf['scenario']
                 conf.pop('scenario')
 
             # override pipe twargs with left twargs in config
             pipe_twargs.update(conf)
-
-        # initialize new context by registering sessionId in context object
-        if not sessionId in self.context:
-            self.log(f'Start new conversation {sessionId}', label='🗯️')
-            self.setContext(sessionId, username, char_tags, scenario)
-
         
+        # convert twargs to llama.cpp if cpu is used
+        pipe_twargs = self.__convert_twargs__(pipe_twargs)
 
-        # formatted input
-        # formattedInput = f'{username}: {input_text}'
-            
-        # ---- pre-processing ----    
-        # load current context from history (extract first element i.e. SYS-tag)
-        # https://github.com/facebookresearch/llama/issues/484#issuecomment-1649286345
-        # https://huggingface.co/blog/llama2#how-to-prompt-llama-2
-        messages = [self.context[sessionId][0]]
+        # Check if conversation context was initialized for sessionId.
+        if not sessionId in self.context:
+
+            # First set the beginning system prompt, from 
+            # provided scenario or construct scenrio from char_tags
+            if scenario:
+                sys_prompt = scenario
+            else:
+                if self.llama_version == 'llama-2':
+                    sys_prompt = f"""This is a dialog, where a user interacts with {self.name}.\n {self.name} is {', '.join(char_tags)}, and is aware of his limits. \n{username}: Hello, who are you?\n{self.name}: Hello! I am **{self.name}** How can I assist you today?"""
+                elif self.llama_version == 'llama-3':
+                    sys_prompt = f"""Your name is {self.name}, you are an assistant which is {', '.join(char_tags)}."""
+
+            # Initialize new context with sessionId
+            self.log(f'Start new conversation {sessionId}', label='🗯️')
+            self.context[sessionId] = [self.__format_prompt__(sys_prompt, system_prompt=True)]
+
+        # Gather a formatted conversation with formatted system_prompt.
+        formatted_conversation = [self.context[sessionId][0]]
         do_strip = False
+        
+        # Reconstruct conversation with correct prompting format
         for user_input, response in self.context[sessionId][1:]:
+
             user_input = user_input.strip() if do_strip else user_input
             do_strip = True
-            messages.append(f'{user_input} [/INST] {response.strip()} </s><s>[INST] ')
 
+            formatted_prompt = self.__format_prompt__(user_input, header=username, response=response)
+            formatted_conversation.append( formatted_prompt )
+
+        # Append current message derived from input.
         message = input_text.strip() if do_strip else input_text
-        messages.append(f'{message} [/INST]')
+        formatted_message = self.__format_prompt__(message, username)
+        formatted_conversation.append(formatted_message)
 
-        # construct the final prompt
-        prompt = ''.join(messages)
+        # Merge formatted conversation to final prompt
+        formatted_prompt = ''.join(formatted_conversation)
 
-        # inference -> get raw string output and response
-        raw_output = self.inference(prompt, **pipe_twargs)
-        response = raw_output[0]['generated_text']
+        # -> inference
+        raw_output = self.inference(formatted_prompt, **pipe_twargs)
         
-        # post-processing & format
-        processed_output = self.postProcess(prompt, raw_output[0]['generated_text'], username)
-        # processed_tagged = f'{processed}</s><s>'
+        try:
+            formatted_response = raw_output[0]['generated_text']
+        except KeyError:
+            # fallback for llama.cpp
+            formatted_response = raw_output['choices'][0]['text']
 
-        # append q&a tuple to context
-        self.context[sessionId].append((input_text, processed_output))
+        # extract response from formatted output
+        response = self.__post_process__(formatted_prompt, formatted_response)
 
-        return processed_output
+        # Append newly received input, output tuple to context
+        self.context[sessionId].append((input_text, response))
+
+        return response
 
     def generate (self, input_text:str, max_new_tokens:int=128) -> str:
 
@@ -393,7 +376,7 @@ class client:
         '''
         Inference of input through model using the transformer pipeline.
         '''
-        print('pipe twargs:', pipe_twargs)
+        
         return self.pipe(input_text, **pipe_twargs)
 
     def loadModel (self, model_file:str|None=None, hugging_face_path:str|None=None, device:str='gpu', device_id:None|int=None, **twargs) -> bool:
@@ -476,9 +459,42 @@ class client:
 
 
         # ==== CPU approach ====
+        
+        # Load with llama.cpp first (the best performance approach)
         try:
 
-            self.log('try loading transformers on CPU using provided arguments ...', label='⚙️')
+            self.log(f'try loading {hugging_face_path} with llama.cpp ...', label='⚙️')
+
+            # [ctransformers deprecated]
+            # self.model = ctransformers.AutoModelForCausalLM.from_pretrained(hugging_face_path, model_file=model_file, hf=True, **twargs)
+            # self.tokenizer = ctransformers.AutoTokenizer.from_pretrained(self.model)
+
+            # ---- llama.cpp ----
+            self.model = Llama.from_pretrained(
+                repo_id=hugging_face_path,
+                filename=model_file,
+                chat_format=self.llama_version,
+                verbose=True # keep enabled otherwise will cause exception: https://github.com/abetlen/llama-cpp-python/issues/729
+            )
+
+            # for llama.cpp the model can be used as pipe
+            # see: https://github.com/abetlen/llama-cpp-python?tab=readme-ov-file#high-level-api
+            self.pipe = self.model
+
+            # re-write the base module
+            self.llm_base_module = 'llama.cpp'
+
+            self.log(f'Successfully loaded {hugging_face_path} with llama.cpp on CPU!', label='✅')
+            return True
+        
+        except:
+
+            print_exc()
+        
+        # finally try to load with classic transformers
+        try:
+
+            self.log('fallback loading with transformers on CPU using provided arguments ...', label='⚙️')
 
             # default transformers
             self.model = transformers.AutoModelForCausalLM.from_pretrained(hugging_face_path, device_map="cpu", **twargs)
@@ -491,23 +507,8 @@ class client:
         except:
 
             print_exc()
-
-        # ctransfomers for builds with GGUF weight format
-        # load with input twargs only, since gpu parameters are not known
-        try:
-
-            self.log(f'try loading {hugging_face_path} with ctransformers ...', label='⚙️')
-            
-            self.model = ctransformers.AutoModelForCausalLM.from_pretrained(hugging_face_path, model_file=model_file, hf=True, **twargs)
-            self.tokenizer = ctransformers.AutoTokenizer.from_pretrained(self.model)
-            self.log(f'Successfully loaded {hugging_face_path} with ctransformers on CPU', label='✅')
-            return True
         
-        except:
-
-            print_exc()
-        
-        self.log(f'failed loading {hugging_face_path} onto CPU as well.', label='🛑')
+        self.log(f'failed loading {hugging_face_path} onto CPU.', label='🛑')
         
         return False
 
@@ -523,63 +524,6 @@ class client:
         header = f"{__colors__[color]}{label.upper()}{__colors__['nc']} "
         print(header, *stdout)
 
-    def postProcess (self, _input:str, _output:str, username:str) -> str:
-
-        '''
-        Post-processing method which takes raw _input and _output from LLM and returns a post-processed output.
-        This is only raw message and string processing, no transformer tags are added. 
-        '''
-
-        # define processed output
-        processed = _output  
-
-        # remove initial input and empty lines
-        processed = processed.replace(_input, '').replace('\n\n', '') 
-
-        # sort out valid paragraphs
-        user_tag = f'{username}:'.lower()
-        processed_rohling = ''
-        for paragraph in processed.split('\n'): # extract the first answer and disregard further generations
-            # check if the paragraph refers to AI's output
-            # otherwise if it's a random user generation terminate
-            if user_tag in paragraph.lower():
-                break
-            processed_rohling += '\n' + paragraph
-        
-        # override with processed paragraphs
-        processed = processed_rohling
-        
-        # remove possible answers (as the ai continues otherwise by improvising the whole dialogue)
-        # override processed variable with rohling
-        if user_tag in processed_rohling.lower():
-            processed = processed.split(username+': ')[0] 
-        
-        return processed
-
-    def ramUsage (self) -> tuple[float, str]:
-
-        '''
-        Returns the memory used by the current process.
-        Will return a tuple (value, string suffix), the suffix is
-        from 'b', 'kb', 'mb', 'gb', 'tb', depending on size.
-        '''
-        
-        suffix = ['b', 'kb', 'mb', 'gb', 'tb']
-
-        # measure RAM usage
-        process = psutil.Process(getpid())
-        memory_info = process.memory_info()
-        memory_usage = int(memory_info.rss) # in bytes
-
-        # select correct suffix
-        ind = 0
-        while memory_usage >= 100:
-            memory_usage /= 1024
-            ind += 1
-        memory_usage = round(memory_usage, 1)
-
-        return (memory_usage, suffix[ind])
-    
     def reset (self) -> None:
 
         '''
@@ -608,6 +552,7 @@ class client:
         which will be initialized in the current chat id.
         '''
         
+        # set beginning scenario
         if scenario:
             ctx = scenario
         else:
@@ -689,6 +634,180 @@ class client:
 
             self.config[k] = v
 
+    # ---- Conversion Methods ----
+    def __convert_twargs__ (self, twargs: dict) -> dict:
+
+        '''
+        Converts the assembled twargs element used in methods:
+
+        - client.inference
+        - client.contextInference
+
+        to compliant kwarg for specific library.
+        E.g. llama.cpp has different naming for max_new_tokens.
+        '''
+
+        if self.llm_base_module == 'llama.cpp':
+
+            if 'max_new_tokens' in twargs:
+                twargs['max_tokens'] = twargs['max_new_tokens']
+                twargs.pop('max_new_tokens')
+            
+            if 'repetition_penalty' in twargs:
+                twargs['repeat_penalty'] = twargs['repetition_penalty']
+                twargs.pop('repetition_penalty')
+
+        return twargs
+
+    def __format_prompt__ (self, input_text: str, header: str|None=None, response: str|None=None, system_prompt: bool=False):
+
+        '''
+        Sets the correct prompting format, and returns the formatted input.
+        
+        [Parameters]
+        input_text          The user input, or system prompt if system_prompt enabled.
+        system_prompt       if enabled, will return initializing system prompt.
+        header              Header sets the role, e.g. 'user', 'assistant'
+        response            Option to directly encode response as well.
+        llama_version       Set the llama version for proper prompt encoding.
+                            default: 'llama-2'
+        system_prompt       Will return encoded system prompt.
+
+        [Prompt Encodings]
+        LLaMA-2:
+          https://github.com/facebookresearch/llama/issues/484#issuecomment-1649286345
+          https://huggingface.co/blog/llama2#how-to-prompt-llama-2
+        LLaMA-3:
+          https://llama.meta.com/docs/model-cards-and-prompt-formats/meta-llama-3/
+        '''
+
+        if system_prompt:
+
+            if self.llama_version == 'llama-2':
+
+                return f'<s>[INST] <<SYS>>\n{input_text}\n<</SYS>>\n\n'        
+            
+            elif self.llama_version == 'llama-3':
+
+                return f'<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n\n{input_text}<|eot_id|>'
+        
+        if self.llama_version == 'llama-2':
+
+            if response:
+
+                return f'{input_text.strip()} [/INST] {response.strip()} </s><s>[INST] '
+
+            return f'{input_text.strip()} [/INST] '
+        
+        
+        elif self.llama_version == 'llama-3':
+
+            if response:
+                # it's important that the response header tag is always called "assistant"
+                # otherwise this will cause wrong encoding and spaming output.
+                # see: https://github.com/ggerganov/llama.cpp/issues/2598                                                 vvvvvvvvv
+                return f'<|start_header_id|>{header}<|end_header_id|>\n\n{input_text.strip()}<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n{response.strip()}<|eot_id|>'
+
+            return f'<|start_header_id|>{header}<|end_header_id|>\n\n{input_text.strip()}<|eot_id|>'
+
+    def __post_process__ (self, _input:str, _output:str) -> str:
+
+        '''
+        Post-processing method which takes formatted _input and _output from LLM and returns a clean string output.
+        This is only raw message and string processing, no transformer tags are added. 
+        '''
+
+        # define processed output
+        processed = _output  
+
+        # remove initial input and empty lines
+        processed = processed.replace(_input, '').replace('\n\n', '') 
+
+        # remove annoying assistant token at the beginning in llama-3
+        if 'assistant\n' in processed:
+            processed = processed.replace('assistant\n', '') 
+        elif 'assistant' in processed[:len(self.name)+20]:
+            processed = processed.replace('assistant', '', 1)
+
+        # remove potential eos, bos token artifacts
+        for token in ['<<SYS>>', '<</SYS>>', '[INST]', '[/INST]' '<</s>', '<<s>', '<s>', '<</s>>']:
+            processed = processed.replace(token, '')
+        
+        return processed
+
+    # ---- Benchmark Methods ----
+    def bench (self, token_length: int=512) -> None:
+
+        '''
+        A quick benchmark of the loaded model.
+        '''
+
+        self.log('start benchmark ...', label='⏱️')
+
+        stopwatch_start = time_ns()
+        raw_output = self.inference('please write a generic long letter', max_new_tokens=token_length)
+        stopwatch_stop = time_ns()
+        duration = (stopwatch_stop - stopwatch_start) * 1e-9
+
+        # Get the memory usage of the current process
+        memory_usage = self.ramUsage() # memory occupied by the process in total
+        vram_usage = self.vramUsage() # memory allocated b torch on gpu
+
+        # unpack
+        string = raw_output[0]['generated_text']
+
+        # count tokens
+        tokens = len(self.tokenize(string))
+        bytes = len(string)
+
+        # compute statistics
+        token_rate = round(tokens/duration, 3)
+        tpot = round(1e3 / token_rate, 3) # time per output token in ms
+        data_rate = round(bytes/duration, 3)
+        bit_rate = round(data_rate*8, 3)
+        duration = round(duration, 3)
+
+        # print results
+        print('\n-------- benchmark results --------')
+        print(
+            f'Device ({self.device}): {self.getDeviceName()}',
+            f'\nDevice ID used: {0 if self.device == "cpu" else torch.cuda.current_device()}',
+            f'\nRAM Usage: {memory_usage[0]} {memory_usage[1]}',
+            f'\nvRAM Usage: {vram_usage[0]} {vram_usage[1]}',
+            f'\nMax. Token Window: {token_length}',
+            f'\nTokens Generated: {tokens}',
+            f'\nBytes Generated: {bytes } bytes'
+            f'\nToken Rate: {token_rate} tokens/s', 
+            f'\nData Rate: {data_rate} bytes/s',
+            f'\nBit Rate: {bit_rate} bit/s',
+            f'\nTPOT: {tpot} ms/token',
+            f'\nTotal Gen. Time: {duration} s'
+        )
+        
+    def ramUsage (self) -> tuple[float, str]:
+
+        '''
+        Returns the memory used by the current process.
+        Will return a tuple (value, string suffix), the suffix is
+        from 'b', 'kb', 'mb', 'gb', 'tb', depending on size.
+        '''
+        
+        suffix = ['b', 'kb', 'mb', 'gb', 'tb']
+
+        # measure RAM usage
+        process = psutil.Process(getpid())
+        memory_info = process.memory_info()
+        memory_usage = int(memory_info.rss) # in bytes
+
+        # select correct suffix
+        ind = 0
+        while memory_usage >= 100:
+            memory_usage /= 1024
+            ind += 1
+        memory_usage = round(memory_usage, 1)
+
+        return (memory_usage, suffix[ind])
+    
     def vramUsage (self) -> tuple[float, str]:
 
         '''
@@ -713,6 +832,76 @@ class client:
 
         return (vram_usage, suffix[ind])
 
+    # [Deprecated]
+    def contextInference_deprecated (self, input_text: str, sessionId: int=0, username: str='human', char_tags: list[str]=['helpful'], scenario: None|str=None, **pipe_twargs) -> str:
+
+        '''
+        [Deprecated]
+        Mimicks the chat method, but returns the output.
+        Used for webUI inference, will behave the same as chat method.
+
+        If setConfig was call priorly twargs, the pre-defined twargs will be overriden.
+        '''
+
+        # clarify twargs by merging with config (if enabled)
+        if self.config:
+            conf = self.config
+            # override standard twargs with existing 
+            # config value and remove from config
+            if 'username' in conf:
+                username = conf['username']
+                conf.pop('username')
+            if 'char_tags' in conf:
+                char_tags = conf['char_tags']
+                conf.pop('char_tags')
+            if 'show_duration' in conf:
+                conf.pop('show_duration')
+            if 'scenario' in conf:
+                scenario = conf['scenario']
+                conf.pop('scenario')
+
+            # override pipe twargs with left twargs in config
+            pipe_twargs.update(conf)
+
+        # initialize new context by registering sessionId in context object
+        if not sessionId in self.context:
+            self.log(f'Start new conversation {sessionId}', label='🗯️')
+            self.setContext(sessionId, username, char_tags, scenario)
+
+        
+
+        # formatted input
+        # formattedInput = f'{username}: {input_text}'
+            
+        # ---- pre-processing ----    
+        # load current context from history (extract first element i.e. SYS-tag)
+        # https://github.com/facebookresearch/llama/issues/484#issuecomment-1649286345
+        # https://huggingface.co/blog/llama2#how-to-prompt-llama-2
+        messages = [self.context[sessionId][0]]
+        do_strip = False
+        for user_input, response in self.context[sessionId][1:]:
+            user_input = user_input.strip() if do_strip else user_input
+            do_strip = True
+            messages.append(f'{user_input} [/INST] {response.strip()} </s><s>[INST] ')
+
+        message = input_text.strip() if do_strip else input_text
+        messages.append(f'{message} [/INST]')
+
+        # construct the final prompt
+        prompt = ''.join(messages)
+
+        # inference -> get raw string output and response
+        raw_output = self.inference(prompt, **pipe_twargs)
+        response = raw_output[0]['generated_text']
+        
+        # post-processing & format
+        processed_output = self.__post_process__(prompt, raw_output[0]['generated_text'], username)
+        # processed_tagged = f'{processed}</s><s>'
+
+        # append q&a tuple to context
+        self.context[sessionId].append((input_text, processed_output))
+
+        return processed_output
 
 class console ():
 
@@ -723,7 +912,6 @@ class console ():
 
     def __init__(self, _client:client) -> None:
         _client.chat()
-
 
 class handler (SimpleHTTPRequestHandler):
 

@@ -27,7 +27,6 @@ cl.setConfig(
         'genuine'
     ], 
     username='User',
-    do_sample=True, 
     temperature=0.85, 
     repetition_penalty=1.15
 )

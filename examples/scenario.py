@@ -24,7 +24,6 @@ cl.setConfig(
     max_new_tokens=128,
     scenario=myScenario,  # <-- add the scenario to config instead of char_tags
     username='Mario',
-    do_sample=True, 
     temperature=0.85, 
     repetition_penalty=1.15,
     top_p=0.95, 

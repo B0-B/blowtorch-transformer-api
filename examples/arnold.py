@@ -25,7 +25,6 @@ client('llama-2-7b-chat.Q2_K.gguf',
         'jokes around',
         'complaining about his current age'
     ], 
-    do_sample=False, 
     temperature=0.8, 
     repetition_penalty=1.1
 )

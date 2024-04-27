@@ -16,7 +16,6 @@ cl = client(hugging_face_path='TheBloke/Wizard-Vicuna-7B-Uncensored-GPTQ',
 
 cl.setConfig(
     username='User',
-    do_sample=True, 
     temperature=0.8, 
     repetition_penalty=1.1
 )

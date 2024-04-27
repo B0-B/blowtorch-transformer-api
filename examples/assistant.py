@@ -22,7 +22,6 @@ client('llama-2-7b-chat.Q2_K.gguf',
         'obedient'
     ], 
     username='Human',
-    do_sample=True, 
     temperature=0.8, 
     repetition_penalty=1.3
 )

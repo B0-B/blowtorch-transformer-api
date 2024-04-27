@@ -14,7 +14,7 @@ from blowtorch import client, console, webUI
 
 cl = client('llama-2-7b-chat.Q2_K.gguf', 
             'TheBloke/Llama-2-7B-Chat-GGUF', 
-            name='Bowser',
+            name='Yoda',
             device='cpu', 
             model_type="llama",
             context_length = 6000)
@@ -22,8 +22,7 @@ cl = client('llama-2-7b-chat.Q2_K.gguf',
 cl.setConfig(
     max_new_tokens=128,
     scenario=myScenario,  # <-- add the scenario to config instead of char_tags
-    username='Mario',
-    do_sample=True, 
+    username='Student',
     temperature=0.85, 
     repetition_penalty=1.15,
     top_p=0.95, 
