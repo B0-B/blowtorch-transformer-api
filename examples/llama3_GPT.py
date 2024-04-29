@@ -14,7 +14,7 @@ cl = client('Meta-Llama-3-8B-Instruct.Q2_K.gguf',
             'MaziyarPanahi/Meta-Llama-3-8B-Instruct-GGUF', 
             name='Llama-GPT',
             device='cpu',
-            llama_version="llama-3")
+            chat_format="llama-3")
 
 cl.setConfig(
     char_tags=[

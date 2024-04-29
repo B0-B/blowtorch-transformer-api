@@ -22,7 +22,7 @@ USERNAME = 'Steve'
 # create state-of-the-art chat bot
 myFancyChatBot = client('Meta-Llama-3-8B-Instruct.Q2_K.gguf', 
             'MaziyarPanahi/Meta-Llama-3-8B-Instruct-GGUF', 
-            llama_version="llama-3")
+            chat_format="llama-3")
 
 myChatBot.setConfig(username=USERNAME)
 
@@ -47,7 +47,7 @@ webUI(cl)
 - Has automatic fallbacks for different weight formats (e.g. GGML, GGUF, bin, ..)
 
 ## Base Requirements   
-- Python 3.11 
+- Python >=3.10.12
 - A system with a CPU (preferably Ryzen) and `>=16GB` RAM
 - Assumes drivers were correctly installed and GPU is detectable via rocm-smi, nvidia-smi etc.
 - A solid GPT chat requires `>=6GB` of RAM/vRAM depending on device.
@@ -149,7 +149,6 @@ cl.chat(
         'obedient'
     ], 
     username='Human',  
-    do_sample=False, 
     temperature=0.8, 
     repetition_penalty=1.1)
 ```
@@ -190,7 +189,6 @@ cl.setConfig(
         'obedient'
     ], 
     username='Human',
-    do_sample=True, 
     temperature=0.8, 
     repetition_penalty=1.1
 )
@@ -212,7 +210,6 @@ cl.setConfig(
         'obedient'
     ], 
     username='Human',
-    do_sample=True, 
     temperature=0.8, 
     repetition_penalty=1.1
 )
@@ -222,45 +219,10 @@ from blowtorch import webUI
 webUI(cl)
 ```
 
-## Expose Objects for your Chat
 
 
 </details>
 
-
-
-
-
-<!-- CLI -->
-<details>
-<summary style="font-size:2rem">Command Line Inference (CLI)</summary>
-
----
-
-Pre-trained models like e.g. Llama2 can directly be ported from huggingface hub, and subsequently propagate inputs or inference, through the model. ``Note:`` that the inference method is the lowest level and will not pre- or post process, track the context. These steps will be considered with the ``contextInference`` method which is used by chat and webUI.
-
-
-```python
-from blowtorch import client
-
-AI = client(hugging_face_path='TheBloke/Llama-2-7B-Chat-GGML', device='cpu', model_type="llama") # model_type is transformer compliant arg
-# start the command line interface for text interaction with some transformer.pipeline arguments
-AI.cli(max_new_tokens=64, do_sample=True, temperature=0.8, repetition_penalty=1.2)
-```
-```python
-Human:special relativity
-Llama-2-7B-Chat-GGML: [{'generated_text': "special relativity and the meaning of time\n\nTime and its relationship to space are fundamental concepts in physics. According to Newton's laws 
-of motion, time is a fixed quantity that moves along with space, yet according to Einstein's special relativity, time has no actual physical existence. This paradox has puzzled"}]
-```
-
-```
-Human: can you explain what a dejavu is?
-Llama-2-7B-Chat-GGML: [{'generated_text': 'can you explain what a dejavu is?\n\nAnswer: A deja vu is a French term that refers to a feeling of familiarity or recognition that cannot be explained. It\'s the sensation of having already experienced an event, situation, or place, even though you know that you have not. Deja vu can also be described as a "'}]
-```
-
-The cli is a useful method is intended for testing forward-propagation but since it is not tracking context, or be reasonable (rather halucinating) or wrapped in tags, the output will simply be a random completion of the input.
-
-</details>
 
 
 
@@ -272,14 +234,14 @@ The cli is a useful method is intended for testing forward-propagation but since
 ---
 
 
-The following is an example of loading a specific model file (from huggingface card) in **GGUF** format. This will be automatically loaded with [ctransformers](https://github.com/marella/ctransformers) in a single line. 
+The following is an example of loading quantization level, like a model file (from huggingface card) in **GGUF** format. If CPU is used, as GGML models are really well suited for CPU, it will be automatically loaded with [llama.cpp](https://github.com/marella/ctransformers) in a single line. 
 
 blowtorch's chat method tracks the context, so the LLM can argue and even write code.
 For better output increase the max token size.
 
 ```python
 from blowtorch import client
-client('llama-2-7b-chat.Q2_K.gguf', 'TheBloke/Llama-2-7B-Chat-GGUF', 'cpu', model_type="llama").chat(max_new_tokens=512, do_sample=False, temperature=0.8, repetition_penalty=1.1)
+client('llama-2-7b-chat.Q2_K.gguf', 'TheBloke/Llama-2-7B-Chat-GGUF', 'cpu', model_type="llama").chat(max_new_tokens=512, temperature=0.8, repetition_penalty=1.1)
 ```
 
     Human: please create a python script which loads a huggingface model into transformers.
@@ -344,7 +306,6 @@ client('llama-2-7b-chat.Q2_K.gguf',
 ).chat(
     max_new_tokens=128, 
     char_tags=['funnily impersonates Arnold Schwarzenegger', 'joking', 'randomly stating facts about his career', 'hectic'], 
-    do_sample=False, 
     temperature=0.8, 
     repetition_penalty=1.1
 ) `
@@ -405,7 +366,6 @@ cl.setConfig(
     max_new_tokens=128,
     scenario=myScenario,  # <-- add the scenario to config instead of char_tags
     username='Pacino',
-    do_sample=True, 
     temperature=0.85, 
     repetition_penalty=1.15,
     top_p=0.95, 
@@ -439,7 +399,6 @@ cl.setConfig(
         'obedient'
     ], 
     username='Human',
-    do_sample=True, 
     temperature=0.8, 
     repetition_penalty=1.1
 )
