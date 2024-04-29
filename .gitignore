@@ -11,7 +11,6 @@
 llama-build/*
 
 # ignore build files
-dist/
 build/
 *.egg-info/
 
@@ -19,3 +18,4 @@ build/
 */lisa.py
 */sunday.py
 */tyrone.py
+dev.ipynb

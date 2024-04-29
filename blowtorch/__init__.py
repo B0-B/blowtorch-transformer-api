@@ -26,6 +26,7 @@ from os import getpid, chdir, getcwd
 import torch
 import transformers
 from llama_cpp import Llama
+from llama_cpp.llama_tokenizer import LlamaHFTokenizer
 
 # server
 import _socket
@@ -62,7 +63,7 @@ class client:
     **twargs            custom trasformer key word arguments
     '''
 
-    def __init__ (self, model_file:str|None=None, hugging_face_path:str|None=None, llama_version: str='llama-2', device:str='gpu', device_id:None|int=None,
+    def __init__ (self, model_file:str|None=None, hugging_face_path:str|None=None, chat_format: str='llama-2', device:str='gpu', device_id:None|int=None,
                   name: str|None=None, verbose: bool=False, silent: bool=False, **twargs) -> None:
 
         # stdout console logging
@@ -103,12 +104,12 @@ class client:
         self.llm_base_module = 'transformers'
 
         # try to detect llama version
-        self.llama_version = llama_version
+        self.chat_format = chat_format
         for temp in ['llama-2', 'llama-3']:
-            if temp in hugging_face_path.lower() and llama_version != temp:
-                self.log(f'recognized that "{hugging_face_path}" is a {temp} model, but provided the llama_version is "{llama_version}" which could cause problems while prompting!', label='⚠️')
+            if temp in hugging_face_path.lower() and chat_format != temp:
+                self.log(f'recognized that "{hugging_face_path}" is a {temp} model, but provided the chat_format is "{chat_format}" which could cause problems while prompting!', label='⚠️')
                 break
-            elif temp in hugging_face_path.lower() and llama_version == temp:
+            elif temp in hugging_face_path.lower() and chat_format == temp:
                 break
         
         # -- load model and tokenizer and instantiate pipeline --
@@ -420,12 +421,17 @@ class client:
             # self.tokenizer = ctransformers.AutoTokenizer.from_pretrained(self.model)
 
             # ---- llama.cpp ----
+            # get the model
             self.model = Llama.from_pretrained(
                 repo_id=hugging_face_path,
                 filename=model_file,
-                chat_format=self.llama_version,
-                verbose=True # keep enabled otherwise will cause exception: https://github.com/abetlen/llama-cpp-python/issues/729
+                chat_format=self.chat_format,
+                # tokenizer=LlamaHFTokenizer.from_pretrained(hugging_face_path),
+                verbose=True # keep enabled otherwise it might cause an exception: https://github.com/abetlen/llama-cpp-python/issues/729
             )
+
+            # isolate the tokenizer function
+            self.tokenizer = self.model.tokenize
 
             # for llama.cpp the model can be used as pipe
             # see: https://github.com/abetlen/llama-cpp-python?tab=readme-ov-file#high-level-api
@@ -508,9 +514,9 @@ class client:
         if scenario:
             sys_prompt = scenario
         else:
-            if self.llama_version == 'llama-2':
+            if self.chat_format == 'llama-2':
                 sys_prompt = f"""This is a dialog, where a user interacts with {self.name}.\n {self.name} is {', '.join(char_tags)}, and is aware of his limits. \n{username}: Hello, who are you?\n{self.name}: Hello! I am **{self.name}** How can I assist you today?"""
-            elif self.llama_version == 'llama-3':
+            elif self.chat_format == 'llama-3':
                 sys_prompt = f"""Your name is {self.name}, you are an assistant which is {', '.join(char_tags)}."""
 
         # Initialize new context with sessionId
@@ -535,10 +541,17 @@ class client:
     def tokenize (self, string: str) -> list[int]:
 
         '''
-        Tokenizes a string via the currently loaded tokenizer.
+        Tokenizes a string using the loaded backend tokenizer.
+        [Parameters]
+        string      The string to tokenize.
+        [Return]
+        List of tokens encoded as byte integers.
         '''
 
-        return self.tokenizer.encode(string)
+        if self.llm_base_module == 'transformers':
+            return self.tokenizer.encode(string)
+        elif self.llm_base_module == 'llama.cpp':
+            return self.tokenizer(string.encode())
     
     # ---- Config Handling ----
     def setConfig (self, **twargs) -> None:
@@ -659,7 +672,7 @@ class client:
         system_prompt       if enabled, will return initializing system prompt.
         header              Header sets the role, e.g. 'user', 'assistant'
         response            Option to directly encode response as well.
-        llama_version       Set the llama version for proper prompt encoding.
+        chat_format       Set the llama version for proper prompt encoding.
                             default: 'llama-2'
         system_prompt       Will return encoded system prompt.
 
@@ -673,15 +686,15 @@ class client:
 
         if system_prompt:
 
-            if self.llama_version == 'llama-2':
+            if self.chat_format == 'llama-2':
 
                 return f'<s>[INST] <<SYS>>\n{input_text}\n<</SYS>>\n\n'        
             
-            elif self.llama_version == 'llama-3':
+            elif self.chat_format == 'llama-3':
 
                 return f'<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n\n{input_text}<|eot_id|>'
         
-        if self.llama_version == 'llama-2':
+        if self.chat_format == 'llama-2':
 
             if response:
 
@@ -690,7 +703,7 @@ class client:
             return f'{input_text.strip()} [/INST] '
         
         
-        elif self.llama_version == 'llama-3':
+        elif self.chat_format == 'llama-3':
 
             if response:
                 # it's important that the response header tag is always called "assistant"
@@ -726,16 +739,21 @@ class client:
         return processed
 
     # ---- Benchmark Methods ----
-    def bench (self, token_length: int=512) -> None:
+    def bench (self, tokens: int=512) -> None:
 
         '''
         A quick benchmark of the loaded model.
+
+        [Parameters]
+        tokens      Number of tokens to generate.
         '''
+
+        kwargs = self.__convert_twargs__({'max_new_tokens': tokens})
 
         self.log('start benchmark ...', label='⏱️')
 
         stopwatch_start = time_ns()
-        raw_output = self.inference('please write a generic long letter', max_new_tokens=token_length)
+        raw_output = self.pipe('please write a generic long letter', **kwargs)
         stopwatch_stop = time_ns()
         duration = (stopwatch_stop - stopwatch_start) * 1e-9
 
@@ -744,7 +762,14 @@ class client:
         vram_usage = self.vramUsage() # memory allocated b torch on gpu
 
         # unpack
-        string = raw_output[0]['generated_text']
+        # try to extract the generated text
+        print('raw_output', raw_output['choices'][0]['text'])
+        string = ''
+        try:
+            string = raw_output[0]['generated_text']
+        except KeyError:
+            # fallback for llama.cpp
+            string = raw_output['choices'][0]['text']
 
         # count tokens
         tokens = len(self.tokenize(string))
@@ -764,7 +789,7 @@ class client:
             f'\nDevice ID used: {0 if self.device == "cpu" else torch.cuda.current_device()}',
             f'\nRAM Usage: {memory_usage[0]} {memory_usage[1]}',
             f'\nvRAM Usage: {vram_usage[0]} {vram_usage[1]}',
-            f'\nMax. Token Window: {token_length}',
+            f'\nMax. Token Window: {tokens}',
             f'\nTokens Generated: {tokens}',
             f'\nBytes Generated: {bytes } bytes'
             f'\nToken Rate: {token_rate} tokens/s', 
@@ -821,6 +846,57 @@ class client:
         vram_usage = round(vram_usage, 1)
 
         return (vram_usage, suffix[ind])
+
+class classifier:
+
+    def __init__(self, client: client, attribute: str, scale: tuple|None=None, classes: list|None=None, max_new_tokens: int=5) -> None:
+        
+        self.client = client
+        self.attribute = attribute
+        self.classes = classes
+        self.max_new_tokens = max_new_tokens
+        self.evaluation = None
+
+        scenario = f'Decide if the following statements include {self.attribute}, '
+        if scale:
+            self.evaluation = 'scale'
+            scenario += f"rank them on a scale from {scale[0]} to {scale[1]}"
+        elif classes:
+            self.evaluation = 'classes'
+            scenario += f"categorize them into the classes {classes}"
+        scenario += ', please constrain the output only to the result token:\n'
+
+        self.client.setConfig(
+            scenario=scenario,
+            max_new_tokens=self.max_new_tokens,
+            temperature=1.1 
+        )
+    
+    def classify (self, input: str, trys: int=10) -> any:
+
+        '''
+        Trys to classify a provided input.
+
+        [Parameters]
+        input       User input.
+        trys        Will try this many times to generate a classification
+                    within the provided domain.
+        
+        [Return]
+        Returns the classification result in the allowed type.
+        
+        '''
+
+        for _ in range(trys):
+            sample = self.client.contextInference(input)
+            if self.evaluation == 'scale':
+                try:
+                    float(sample)
+                except:
+                    continue
+            elif self.evaluation == 'classes' and sample.lower() not in self.classes:
+                    continue
+            return sample    
 
 class console ():
 

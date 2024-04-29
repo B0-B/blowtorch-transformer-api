@@ -58,9 +58,14 @@ The older state of this project involved ``ctransformers`` as GGML library for l
 
 **blowtorch** uses ``llama.cpp`` in parallel to classic transformers for more and better onboarding options with CPUs and quantized models.
 
-|**library**|ctransformers|transformers|accelerate|xformers|
-|-|-|-|-|-|
-|**version**|deprecated|latest|0.21.0|latest|
+|**library**|**version**|
+|-|-|
+|transformers|latest|
+|llama-cpp-python|latest|
+|ctransformers|deprecated|
+|accelerate|0.21.0|
+|h5py|3.9.0|
+|psutil|latest|
 
 ## Tests
 |Vendor|Device|Model|Quality Assurance|
@@ -82,21 +87,21 @@ Clone the repository
     git clone https://github.com/B0-B/blowtorch-transformer-api.git
     cd blowtorch-transformer-api
 
-Run `build`, this will build binaries and run `pip` setup of `blowtorch` on both platforms, Windows and Linux.
+Install the provided wheel distribution via python script
 
-```bash
-# for AMD ROCm users
-python setup.py install rocm
+    python install.py 
 
-# for CUDA users
-python setup.py install cuda
+or with ``pip`` package manager
 
-# just CPU
-python setup.py install cpu
+    pip install ./dist/blowtorch-1.2.0-py3-none-any.whl 
 
-# when permissions are needed (Linux)
-sudo python3 setup.py install rocm
-```
+Alternatively if hardware specific build is needed just build from source using automated script.
+
+    python build.py
+
+``Note:`` This will create a new wheel in the ./dist branch. To install the build run **python install.py**
+
+
 </details>  
 
 

@@ -1,0 +1,22 @@
+[build-system]
+requires = ["hatchling", "transformers", "llama-cpp-python", "accelerate==0.21.0", "h5py==3.9.0", "psutil"]
+build-backend = "hatchling.build"
+
+[project]
+name = "blowtorch"
+version = "1.2.0"
+authors = [
+  { name="B0-B", email="alch3mist94@protonmail.com" },
+]
+description = "LLM bootstrap loader for local CPU/GPU inference with fully customizable chat."
+readme = "README.md"
+requires-python = ">=3.10.12"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+Homepage = "https://github.com/B0-B/blowtorch-transformer-api"
+Examples = "https://github.com/B0-B/blowtorch-transformer-api/tree/main/examples"

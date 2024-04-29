@@ -11,4 +11,4 @@ cl = client(hugging_face_path='NousResearch/Llama-2-7b-chat-hf',
                 device='gpu', 
                 model_type="llama")
 
-cl.bench(token_length=512)
+cl.bench(tokens=512)

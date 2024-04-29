@@ -13,4 +13,4 @@ cl = client('Meta-Llama-3-8B-Instruct.Q3_K_L.gguf',
             context_length = 6000,
             llama_version="llama-3")
 
-cl.bench(token_length=512)
+cl.bench(tokens=64)

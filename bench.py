@@ -13,4 +13,4 @@ cl = client(hugging_face_path='TheBloke/Llama-2-7b-Chat-GPTQ',
                 trust_remote_code=False,
                 revision="main")
 
-cl.bench(token_length=512)
+cl.bench(tokens=512)
