@@ -24,10 +24,10 @@ myFancyChatBot = client('Meta-Llama-3-8B-Instruct.Q2_K.gguf',
             'MaziyarPanahi/Meta-Llama-3-8B-Instruct-GGUF', 
             chat_format="llama-3")
 
-myChatBot.setConfig(username=USERNAME)
+myFancyChatBot.setConfig(username=USERNAME)
 
 # expose chat to browser
-webUI(cl)
+webUI(myFancyChatBot)
 ```
 
 ## Updates
