@@ -20,3 +20,4 @@ classifiers = [
 [project.urls]
 Homepage = "https://github.com/B0-B/blowtorch-transformer-api"
 Examples = "https://github.com/B0-B/blowtorch-transformer-api/tree/main/examples"
+Latest = "pip install https://b0-b.github.io/blowtorch-transformer-api/dist/"

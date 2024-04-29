@@ -82,6 +82,13 @@ The older state of this project involved ``ctransformers`` as GGML library for l
 
 ---
 
+### PIP Wheel 
+
+Will automatically install latest pre-build release
+
+    pip install https://b0-b.github.io/blowtorch-transformer-api/dist/blowtorch-1.2.0-py3-none-any.whl
+
+### Manual Installation
 Clone the repository
 
     git clone https://github.com/B0-B/blowtorch-transformer-api.git
@@ -95,7 +102,7 @@ or with ``pip`` package manager
 
     pip install ./dist/blowtorch-1.2.0-py3-none-any.whl 
 
-Alternatively if hardware specific build is needed just build from source using automated script.
+Alternatively, if a hardware specific build is needed just build from source using automated script.
 
     python build.py
 
