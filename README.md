@@ -22,7 +22,8 @@ USERNAME = 'Steve'
 # create state-of-the-art chat bot
 myFancyChatBot = client('Meta-Llama-3-8B-Instruct.Q2_K.gguf', 
             'MaziyarPanahi/Meta-Llama-3-8B-Instruct-GGUF', 
-            chat_format="llama-3")
+            chat_format="llama-3",
+            device="cpu")
 
 myFancyChatBot.setConfig(username=USERNAME)
 
@@ -126,10 +127,10 @@ By default, if no huggingface model was specified, blowtorch will load a slim mo
 
 ```python
 from blowtorch import client
-client(device='cpu').cli()
+client(device='cpu')
 ```
 
-Generally speaking, LLMs are designed to continue (predict) word sequences, thus loading an LLM and generating from inputs like a started sentence, it will try to finish the sentence. For a chat-like experience, blowtorch exploits and tracks the context and initializes the chat with attributes (and character), which allows the AI to track the context and reason accordingly.
+Generally, LLMs are designed to predict the next word in a sequence. Loading an LLM and generating from inputs like a started sentence, it will try to finish the sentence. For a chat-like experience, blowtorch exploits and tracks the context and initializes the chat with attributes (and character), which allows the AI to track the context and reason accordingly.
 
 First, to download and run an arbitrary huggingface model
 

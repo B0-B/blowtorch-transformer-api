@@ -63,7 +63,7 @@ class client:
     **twargs            custom trasformer key word arguments
     '''
 
-    def __init__ (self, model_file:str|None=None, hugging_face_path:str|None=None, chat_format: str='llama-2', device:str='gpu', device_id:None|int=None,
+    def __init__ (self, model_file:str|None=None, hugging_face_path:str|None=None, chat_format: str='llama-2', device:str='gpu', device_id:int=0,
                   name: str|None=None, verbose: bool=False, silent: bool=False, **twargs) -> None:
 
         # stdout console logging
@@ -330,13 +330,13 @@ class client:
         
         return self.pipe(input_text, **pipe_twargs)
 
-    def loadModel (self, model_file:str|None=None, hugging_face_path:str|None=None, device:str='gpu', device_id:None|int=None, **twargs) -> bool:
+    def loadModel (self, model_file:str|None=None, hugging_face_path:str|None=None, device:str='gpu', device_id:int=0, **twargs) -> bool:
 
         '''
         Loads model onto selected device, up to a specific GPU.
 
         device          device gpu/cuda, cpu
-        device_id       None (default), 0, 1, ...
+        device_id       0 (default), 1, ...
         twargs          Transformer arguments
         model_file      only for ctransformers
 
@@ -353,6 +353,24 @@ class client:
                 cuda_arg = 'cuda'
             
             self.log(f'try loading {hugging_face_path} onto GPU', label='⚙️')
+
+            # GGUF quantized files
+            # if 'gguf' in model_file.lower() + hugging_face_path.lower():
+
+            #     self.log(f'GGUF format detected, try to onboard {hugging_face_path} with llama.cpp ...', label='⚙️')
+                
+            #     # llama.cpp model equivalent
+            #     self.model = Llama.from_pretrained(
+            #         repo_id=hugging_face_path,
+            #         filename=model_file,
+            #         chat_format=self.chat_format,
+            #         main_gpu=device_id,
+            #         n_gpu_layers=-1,
+            #         verbose=False, # keep enabled otherwise it might cause an exception: https://github.com/abetlen/llama-cpp-python/issues/729
+            #         **twargs
+            #     )
+
+            #     return True
 
             # try loading with auto device map and assembled arguments
             try:
@@ -423,6 +441,7 @@ class client:
             # ---- llama.cpp ----
             # get the model
             self.model = Llama.from_pretrained(
+                n_gpu_layers=-1,
                 repo_id=hugging_face_path,
                 filename=model_file,
                 chat_format=self.chat_format,
@@ -591,7 +610,7 @@ class client:
             except:
                 device = 'Unknown CPU'
         else:
-            device = torch.cuda.get_device_name(0)
+            device = torch.cuda.get_device_name(self.device_id)
         
         return device
     
