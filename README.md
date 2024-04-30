@@ -20,15 +20,15 @@ from blowtorch import client, webUI
 USERNAME = 'Steve'
 
 # create state-of-the-art chat bot
-myFancyChatBot = client('Meta-Llama-3-8B-Instruct.Q2_K.gguf', 
-            'MaziyarPanahi/Meta-Llama-3-8B-Instruct-GGUF', 
-            chat_format="llama-3",
-            device="cpu")
+myChatClient = client(model_file='Meta-Llama-3-8B-Instruct.Q2_K.gguf', 
+                    hugging_face_path='MaziyarPanahi/Meta-Llama-3-8B-Instruct-GGUF', 
+                    chat_format="llama-3",
+                    device="cpu")
 
-myFancyChatBot.setConfig(username=USERNAME)
+myChatClient.setConfig(username=USERNAME)
 
-# expose chat to browser
-webUI(myFancyChatBot)
+# expose chat in web UI
+webUI(myChatClient)
 ```
 
 ## Updates
@@ -40,10 +40,9 @@ webUI(myFancyChatBot)
 - Simple to install with automated setup and model setup in just 2 lines.
 - Supports various LLaMA versions for prompting in different formats and manages corresponding arguments (transformers, llama.cpp).
 - Works for Windows (only CPU tested) and Linux (CPU/GPU)
-- PyTorch and transformer compliant - extendable with same keyword arguments from e.g. [``transformer.pipeline``](https://github.com/huggingface/transformers/blob/v4.40.1/src/transformers/pipelines/__init__.py#L562)
-- Creates a customizabe chat partner with specified character from scratch ready for usage.
+- PyTorch and transformer compliant - respects keyword arguments from e.g. [``transformer.pipeline``](https://github.com/huggingface/transformers/blob/v4.40.1/src/transformers/pipelines/__init__.py#L562), with auto conversion to [llama.cpp](https://github.com/ggerganov/llama.cpp)
+- Creates a customizable chat bot with specified character.
 - Easy to understand, with few objects which can handle any case.
-- Can load models to CPU using RAM, or GPU, or both by offloading a specified amount of layers to GPU vRAM.
 - Loads models directly from huggingface and store them in local cache.
 - Has automatic fallbacks for different weight formats (e.g. GGML, GGUF, bin, ..)
 
