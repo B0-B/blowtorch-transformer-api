@@ -108,6 +108,32 @@ Alternatively, if a hardware specific build is needed just build from source usi
 
 ``Note:`` This will create a new wheel in the ./dist branch. To install the build run **python install.py**
 
+### GPU & BLAS Backends for llama.cpp 
+blowtorch distinguishes between model formats suited for CPU or GPU. If GPU is selected it will out-of-the-box attempt to load it with ``transformers`` (if suited) which leverages the default torch BLAS backend. If you intend to load a GGUF models on GPU however, blowtorch will try to load it with **llama.cpp**. For this case rebuild ``llama-cpp-python`` with the corresponding BLAS (linear algebra instruction) backend. You can find the full build instructions in [abetlen/llama-cpp-python](https://github.com/abetlen/llama-cpp-python) or the summarized commands below
+
+```bash
+# CPU acceleration on MacOS/Linux
+CMAKE_ARGS="-DLLAMA_BLAS=ON -DLLAMA_BLAS_VENDOR=OpenBLAS" pip install llama-cpp-python --force-reinstall --upgrade --no-cache-dir
+# CPU acceleration on Windows
+$env:CMAKE_ARGS = "-DLLAMA_BLAS=ON -DLLAMA_BLAS_VENDOR=OpenBLAS"
+pip install llama-cpp-python --force-reinstall --upgrade --no-cache-dir
+
+# ROCm hipBLAS on MacOS/Linux
+CMAKE_ARGS="-DLLAMA_HIPBLAS=on" pip install llama-cpp-python --force-reinstall --upgrade --no-cache-dir
+# ROCm hipBLAS on Windows
+$env:CMAKE_ARGS = "-DLLAMA_HIPBLAS=on"
+pip install llama-cpp-python --force-reinstall --upgrade --no-cache-dir
+
+# CUDA on Linux
+CMAKE_ARGS="-DLLAMA_CUDA=on" pip install llama-cpp-python --force-reinstall --upgrade --no-cache-dir
+# CUDA on MacOS
+CMAKE_ARGS="-DLLAMA_METAL=on" pip install llama-cpp-python --force-reinstall --upgrade --no-cache-dir
+# CUDA on Windows
+$env:CMAKE_ARGS = "-DLLAMA_CUDA=on" 
+pip install llama-cpp-python --force-reinstall --upgrade --no-cache-dir
+```
+    
+
 
 </details>  
 
