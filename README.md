@@ -76,6 +76,21 @@ The older state of this project involved ``ctransformers`` as GGML library for l
 |AMD|GPU|RDNA1|✅|
 |AMD|CPU|Ryzen 3950x|✅|
 
+## Tested Models
+
+|Model|recommended device|
+|-|-|
+|MaziyarPanahi/Meta-Llama-3-8B-Instruct-GGUF|CPU|
+|NousResearch/Llama-2-7b-chat-hf|GPU|
+|NousResearch/Llama-2-7b-chat-hf|GPU|
+|TheBloke/Llama-2-7B-Chat-GGUF|CPU|
+|TheBloke/Llama-2-7b-Chat-GPTQ|GPU|
+|TheBloke/Mistral-7B-Instruct-v0.2-GGUF|CPU|
+|TheBloke/Wizard-Vicuna-7B-Uncensored-GPTQ|GPU/CPU|
+
+
+## Docs
+
 <!-- SETUP -->
 <details>
 <summary style="font-size:2rem">Setup</summary>

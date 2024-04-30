@@ -355,22 +355,25 @@ class client:
             self.log(f'try loading {hugging_face_path} onto GPU', label='⚙️')
 
             # GGUF quantized files
-            # if 'gguf' in model_file.lower() + hugging_face_path.lower():
+            try:
+                if 'gguf' in model_file.lower() + hugging_face_path.lower():
 
-            #     self.log(f'GGUF format detected, try to onboard {hugging_face_path} with llama.cpp ...', label='⚙️')
-                
-            #     # llama.cpp model equivalent
-            #     self.model = Llama.from_pretrained(
-            #         repo_id=hugging_face_path,
-            #         filename=model_file,
-            #         chat_format=self.chat_format,
-            #         main_gpu=device_id,
-            #         n_gpu_layers=-1,
-            #         verbose=False, # keep enabled otherwise it might cause an exception: https://github.com/abetlen/llama-cpp-python/issues/729
-            #         **twargs
-            #     )
+                    self.log(f'GGUF format detected, try to onboard {hugging_face_path} with llama.cpp ...', label='⚙️')
+                    
+                    # llama.cpp model equivalent
+                    self.model = Llama.from_pretrained(
+                        repo_id=hugging_face_path,
+                        filename=model_file,
+                        chat_format=self.chat_format,
+                        main_gpu=device_id,
+                        n_gpu_layers=-1,
+                        verbose=False, # keep enabled otherwise it might cause an exception: https://github.com/abetlen/llama-cpp-python/issues/729
+                        **twargs
+                    )
 
-            #     return True
+                    return True
+            except:
+                print_exc()
 
             # try loading with auto device map and assembled arguments
             try:

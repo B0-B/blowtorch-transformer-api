@@ -23,15 +23,3 @@ elif platform.system() in ['Linux', 'Darwin']:
     shell('python3 -m build')
 else:
     print('Unknown OS')
-
-# Re-install llama-cpp with acceleration backend
-# if not devices:
-#     ENV = 'CMAKE_ARGS="-DLLAMA_BLAS=ON -DLLAMA_BLAS_VENDOR=OpenBLAS"'
-# elif 'amd' in devices[0].lower():
-#     ENV = 'CMAKE_ARGS="-DLLAMA_HIPBLAS=on"'
-# elif 'nvidia' in devices[0].lower():
-#     ENV = 'CMAKE_ARGS="-DLLAMA_CUDA=on"'
-
-# ENV = f'$env:{ENV}' if platform.system() == 'Windows' else ENV
-
-# shell(f'{ENV} pip install llama-cpp-python --force-reinstall --upgrade --no-cache-dir')
