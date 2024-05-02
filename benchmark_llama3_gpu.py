@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 
 '''
-LLaMA2 benchmark example.
+Llama-3-8B GPU benchmark example.
 '''
 
 from blowtorch import client
 
-cl = client('Meta-Llama-3-8B-Instruct.Q3_K_L.gguf', 
-            'QuantFactory/Meta-Llama-3-8B-Instruct-GGUF', 
+cl = client(hugging_face_path='MaziyarPanahi/Meta-Llama-3-8B-Instruct-GPTQ', 
             name='Assistant',
             device='gpu',
             context_length = 6000,
