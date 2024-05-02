@@ -54,7 +54,7 @@ webUI(myChatClient)
 
 ## Dependency for performant CPU inference [Default]
 
-The older state of this project involved ``ctransformers`` as GGML library for load GGUF files. However due to inactivity and incompatibility with new **LLaMA-3** model the setup changed to [``llama-cpp-python``](https://github.com/abetlen/llama-cpp-python) project. This python API provides c-bindings for [llama.cpp](https://github.com/ggerganov/llama.cpp). 
+This project used to leverage ``ctransformers`` as GGML library for loading GGUF file format. But due to inactivity and incompatibility with new **LLaMA-3** release the backend switched to [``llama-cpp-python``](https://github.com/abetlen/llama-cpp-python) project. This python API provides c-bindings for [llama.cpp](https://github.com/ggerganov/llama.cpp). 
 
 **blowtorch** uses ``llama.cpp`` in parallel to classic transformers for more and better onboarding options with CPUs and quantized models.
 
@@ -99,7 +99,7 @@ The older state of this project involved ``ctransformers`` as GGML library for l
 
 ### PIP Wheel 
 
-Will automatically install latest pre-build release
+Will automatically install latest pre-built release
 
     pip install https://b0-b.github.io/blowtorch-transformer-api/dist/blowtorch-1.2.0-py3-none-any.whl
 
@@ -124,7 +124,7 @@ Alternatively, if a hardware specific build is needed just build from source usi
 ``Note:`` This will create a new wheel in the ./dist branch. To install the build run **python install.py**
 
 ### GPU & BLAS Backends for llama.cpp 
-blowtorch distinguishes between model formats suited for CPU or GPU. If GPU is selected it will out-of-the-box attempt to load it with ``transformers`` (if suited) which leverages the default torch BLAS backend. If you intend to load a GGUF models on GPU however, blowtorch will try to load it with **llama.cpp**. For this case rebuild ``llama-cpp-python`` with the corresponding BLAS (linear algebra instruction) backend. You can find the full build instructions in [abetlen/llama-cpp-python](https://github.com/abetlen/llama-cpp-python) or the summarized commands below
+blowtorch distinguishes between model formats suited for CPU or GPU. If GPU is selected it will out-of-the-box attempt to load it with ``transformers`` (if suited) which leverages the default torch BLAS backend. If you intend to load a GGUF model on GPU however, blowtorch will try to load it with **llama.cpp**. For this re-build ``llama-cpp-python`` with the corresponding BLAS (linear algebra instruction) backend. You can find the full build instructions in [abetlen/llama-cpp-python](https://github.com/abetlen/llama-cpp-python) or the summarized commands below
 
 ```bash
 # CPU acceleration on MacOS/Linux

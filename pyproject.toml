@@ -1,5 +1,5 @@
 [build-system]
-requires = ["hatchling", "transformers", "llama-cpp-python", "accelerate==0.21.0", "h5py==3.9.0", "psutil"]
+requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
@@ -14,7 +14,14 @@ requires-python = ">=3.10.12"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
-    "Operating System :: OS Independent",
+    "Operating System :: OS Independent"
+]
+dependencies = [
+  "transformers", 
+  "llama-cpp-python", 
+  "accelerate==0.21.0", 
+  "h5py==3.9.0", 
+  "psutil"
 ]
 
 [project.urls]

@@ -10,7 +10,7 @@ be palmyra-small (128M): https://huggingface.co/Writer/palmyra-small.
 import gc
 import re
 import json
-from time import time_ns
+from time import time_ns, perf_counter_ns
 from string import punctuation
 import warnings
 
@@ -79,6 +79,7 @@ class client:
         # default will be palmyra-small 128M parameters
         if not hugging_face_path:
             hugging_face_path = "Writer/palmyra-small"
+        self.hugging_face_path = hugging_face_path
         
         # extract the AI name
         if not name:
@@ -774,10 +775,10 @@ class client:
 
         self.log('start benchmark ...', label='⏱️')
 
-        stopwatch_start = time_ns()
+        stopwatch_start = perf_counter_ns()
         raw_output = self.pipe('please write a generic long letter', **kwargs)
-        stopwatch_stop = time_ns()
-        duration = (stopwatch_stop - stopwatch_start) * 1e-9
+        stopwatch_stop = perf_counter_ns()
+        
 
         # Get the memory usage of the current process
         memory_usage = self.ramUsage() # memory occupied by the process in total
@@ -798,6 +799,7 @@ class client:
         bytes = len(string)
 
         # compute statistics
+        duration = (stopwatch_stop - stopwatch_start) * 1e-9
         token_rate = round(tokens/duration, 3)
         tpot = round(1e3 / token_rate, 3) # time per output token in ms
         data_rate = round(bytes/duration, 3)
@@ -807,7 +809,8 @@ class client:
         # print results
         print('\n-------- benchmark results --------')
         print(
-            f'Device ({self.device}): {self.getDeviceName()}',
+            f'Model: {self.hugging_face_path}',
+            f'\nDevice ({self.device}): {self.getDeviceName()}',
             f'\nDevice ID used: {0 if self.device == "cpu" else torch.cuda.current_device()}',
             f'\nRAM Usage: {memory_usage[0]} {memory_usage[1]}',
             f'\nvRAM Usage: {vram_usage[0]} {vram_usage[1]}',
