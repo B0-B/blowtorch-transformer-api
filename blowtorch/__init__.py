@@ -357,7 +357,7 @@ class client:
 
             # GGUF quantized files
             try:
-                if 'gguf' in model_file.lower() + hugging_face_path.lower():
+                if 'gguf' in hugging_face_path.lower():
 
                     self.log(f'GGUF format detected, try to onboard {hugging_face_path} with llama.cpp ...', label='⚙️')
                     
