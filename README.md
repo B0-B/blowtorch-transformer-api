@@ -56,16 +56,18 @@ webUI(myChatClient)
 
 This project used to leverage ``ctransformers`` as GGML library for loading GGUF file format. But due to inactivity and incompatibility with new **LLaMA-3** release the backend switched to [``llama-cpp-python``](https://github.com/abetlen/llama-cpp-python) project. This python API provides c-bindings for [llama.cpp](https://github.com/ggerganov/llama.cpp). 
 
-**blowtorch** uses ``llama.cpp`` in parallel to classic transformers for more and better onboarding options with CPUs and quantized models.
+**blowtorch** uses ``llama.cpp`` in parallel to classic transformers for more and better onboarding options with CPU focus and quantized models.
 
 |**library**|**version**|
 |-|-|
-|transformers|latest|
+|transformers|4.37.2|
 |llama-cpp-python|latest|
 |ctransformers|deprecated|
 |accelerate|0.21.0|
 |h5py|3.9.0|
 |psutil|latest|
+|optimum|latest|
+|auto-gptq|latest|
 
 ## Tests
 |Vendor|Device|Model|Quality Assurance|
@@ -101,7 +103,7 @@ This project used to leverage ``ctransformers`` as GGML library for loading GGUF
 
 Will automatically install latest pre-built release
 
-    pip install https://b0-b.github.io/blowtorch-transformer-api/dist/blowtorch-1.2.0-py3-none-any.whl
+    pip install https://b0-b.github.io/blowtorch-transformer-api/dist/blowtorch-1.2.1-py3-none-any.whl
 
 ### Manual Installation
 Clone the repository
@@ -115,7 +117,7 @@ Install the provided wheel distribution via python script
 
 or with ``pip`` package manager
 
-    pip install ./dist/blowtorch-1.2.0-py3-none-any.whl 
+    pip install ./dist/blowtorch-1.2.1-py3-none-any.whl 
 
 Alternatively, if a hardware specific build is needed just build from source using automated script.
 

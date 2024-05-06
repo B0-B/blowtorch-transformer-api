@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "blowtorch"
-version = "1.2.0"
+version = "1.2.1"
 authors = [
   { name="B0-B", email="alch3mist94@protonmail.com" },
 ]
@@ -17,13 +17,14 @@ classifiers = [
     "Operating System :: OS Independent"
 ]
 dependencies = [
-  "transformers", 
   "llama-cpp-python", 
   "accelerate==0.21.0", 
   "h5py==3.9.0", 
   "psutil",
   "eager",
-  "optimum"
+  "optimum",
+  "auto-gptq",
+  "transformers==4.37.2"
 ]
 
 [project.urls]
