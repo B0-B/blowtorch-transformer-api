@@ -22,6 +22,7 @@ dependencies = [
   "accelerate==0.21.0", 
   "h5py==3.9.0", 
   "psutil",
+  "eager",
   "optimum"
 ]
 

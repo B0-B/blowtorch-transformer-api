@@ -116,12 +116,13 @@ class client:
         # -- load model and tokenizer and instantiate pipeline --
         self.model = None
         self.tokenizer = None
-        self.pipe = None
         model_loaded = self.loadModel(model_file, hugging_face_path, device, device_id, **twargs)
         if not model_loaded:
             exit()
         else:
             self.log(f'successfully loaded {hugging_face_path}!', label='✅')
+        # create pipeline
+        self.pipe = transformers.pipeline("text-generation", model=self.model, tokenizer=self.tokenizer)
 
         # create context object
         self.context = {}
@@ -131,8 +132,7 @@ class client:
         # use setConfig to define inference twargs
         self.config = None
 
-        # create pipeline
-        # self.pipe = transformers.pipeline("text-generation", model=self.model, tokenizer=self.tokenizer)
+        
 
     def chat (self, username: str='human', char_tags: list[str]=['helpful'], scenario: str=None, show_duration: bool=True, **pipe_twargs) -> None:
 
@@ -786,7 +786,7 @@ class client:
 
         # unpack
         # try to extract the generated text
-        print('raw_output', raw_output['choices'][0]['text'])
+        # print('raw_output', raw_output['choices'][0]['text'])
         string = ''
         try:
             string = raw_output[0]['generated_text']
