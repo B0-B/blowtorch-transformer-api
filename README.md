@@ -62,17 +62,17 @@ This project used to leverage ``ctransformers`` as GGML library for loading GGUF
 |-|-|
 |transformers|4.37.2|
 |llama-cpp-python|latest|
-|ctransformers|deprecated|
-|accelerate|0.21.0|
+|accelerate|0.30.0|
 |h5py|3.9.0|
 |psutil|latest|
 |optimum|latest|
-|auto-gptq|latest|
+|auto-gptq|0.7.1|
+|*ctransformers*|**deprecated**|
 
 ## Tests
 |Vendor|Device|Model|Quality Assurance|
 |-|-|-|-|
-|AMD|GPU|MI300x|   ✅|
+|AMD|GPU|MI300x|✅|
 |AMD|GPU|RDNA3|✅|
 |AMD|GPU|RDNA2|✅|
 |AMD|GPU|RDNA1|✅|

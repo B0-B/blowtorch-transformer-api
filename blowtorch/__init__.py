@@ -132,8 +132,6 @@ class client:
         # use setConfig to define inference twargs
         self.config = None
 
-        
-
     def chat (self, username: str='human', char_tags: list[str]=['helpful'], scenario: str=None, show_duration: bool=True, **pipe_twargs) -> None:
 
         '''
@@ -923,7 +921,7 @@ class classifier:
                     continue
             return sample    
 
-class console ():
+class console:
 
     '''
     Class alias for chat method.
@@ -1014,7 +1012,7 @@ class handler (SimpleHTTPRequestHandler):
         # send
         self.wfile.write(encoded)
 
-class webUI ():
+class webUI:
 
     '''
     Spawns a blowtorch server with exposed chat in a web UI.
