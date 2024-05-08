@@ -11,7 +11,7 @@ from blowtorch import client, webUI, console
 USERNAME = input('Please enter your name:')
 
 cl = client(hugging_face_path='MaziyarPanahi/Meta-Llama-3-8B-Instruct-GPTQ', 
-            name='Assistant',
+            name='LlamaGPT',
             device='gpu',
             chat_format="llama-3")
 

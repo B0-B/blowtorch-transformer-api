@@ -8,7 +8,7 @@ from blowtorch import client
 
 cl = client('Meta-Llama-3-8B-Instruct.Q3_K_L.gguf', 
             'QuantFactory/Meta-Llama-3-8B-Instruct-GGUF', 
-            name='Assistant',
+            name='LlamaGPT',
             device='cpu',
             context_length = 6000,
             chat_format="llama-3")
