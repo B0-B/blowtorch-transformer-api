@@ -103,7 +103,7 @@ This project used to leverage ``ctransformers`` as GGML library for loading GGUF
 
 Will automatically install latest pre-built release
 
-    pip install https://b0-b.github.io/blowtorch-transformer-api/dist/blowtorch-1.2.1-py3-none-any.whl
+    pip install https://b0-b.github.io/blowtorch-transformer-api/dist/blowtorch-1.2.2-py3-none-any.whl
 
 ### Manual Installation
 Clone the repository
@@ -117,7 +117,7 @@ Install the provided wheel distribution via python script
 
 or with ``pip`` package manager
 
-    pip install ./dist/blowtorch-1.2.1-py3-none-any.whl 
+    pip install ./dist/blowtorch-1.2.2-py3-none-any.whl 
 
 Alternatively, if a hardware specific build is needed just build from source using automated script.
 

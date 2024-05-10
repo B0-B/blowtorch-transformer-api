@@ -114,6 +114,8 @@ class client:
                 break
         
         # -- load model and tokenizer and instantiate pipeline --
+
+        # load model and tokenizer
         self.model = None
         self.tokenizer = None
         model_loaded = self.loadModel(model_file, hugging_face_path, device, device_id, **twargs)
@@ -121,8 +123,14 @@ class client:
             exit()
         else:
             self.log(f'successfully loaded {hugging_face_path}!', label='✅')
-        # create pipeline
-        self.pipe = transformers.pipeline("text-generation", model=self.model, tokenizer=self.tokenizer)
+            
+        # create pipeline based on base module
+        if self.llm_base_module == 'transformers':
+            self.pipe = transformers.pipeline("text-generation", model=self.model, tokenizer=self.tokenizer)
+        elif self.llm_base_module == 'llama.cpp':
+            # for llama.cpp the model can be used as pipe
+            # see: https://github.com/abetlen/llama-cpp-python?tab=readme-ov-file#high-level-api
+            self.pipe = self.model
 
         # create context object
         self.context = {}
@@ -456,7 +464,8 @@ class client:
 
             # for llama.cpp the model can be used as pipe
             # see: https://github.com/abetlen/llama-cpp-python?tab=readme-ov-file#high-level-api
-            self.pipe = self.model
+            # (this block is being done in __init__ already)
+            # self.pipe = self.model
 
             # re-write the base module
             self.llm_base_module = 'llama.cpp'
