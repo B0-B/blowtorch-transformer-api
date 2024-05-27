@@ -121,9 +121,11 @@ or with ``pip`` package manager
 
 Alternatively, if a hardware specific build is needed just build from source using automated script.
 
-    python build.py
+    python rebuild.py
 
-``Note:`` This will create a new wheel in the ./dist branch. To install the build run **python install.py**
+``Note:`` This will create a new package wheel in the ``./dist`` branch with your current settings. To install the build run **python install.py**. To build and directly install subsequently run
+
+    python rebuild.py && python install.py
 
 ### GPU & BLAS Backends for llama.cpp 
 blowtorch distinguishes between model formats suited for CPU or GPU. If GPU is selected it will out-of-the-box attempt to load it with ``transformers`` (if suited) which leverages the default torch BLAS backend. If you intend to load a GGUF model on GPU however, blowtorch will try to load it with **llama.cpp**. For this re-build ``llama-cpp-python`` with the corresponding BLAS (linear algebra instruction) backend. You can find the full build instructions in [abetlen/llama-cpp-python](https://github.com/abetlen/llama-cpp-python) or the summarized commands below
