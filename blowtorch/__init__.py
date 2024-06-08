@@ -879,57 +879,6 @@ class client:
 
         return (vram_usage, suffix[ind])
 
-class classifier:
-
-    def __init__(self, client: client, attribute: str, scale: tuple|None=None, classes: list|None=None, max_new_tokens: int=5) -> None:
-        
-        self.client = client
-        self.attribute = attribute
-        self.classes = classes
-        self.max_new_tokens = max_new_tokens
-        self.evaluation = None
-
-        scenario = f'Decide if the following statements include {self.attribute}, '
-        if scale:
-            self.evaluation = 'scale'
-            scenario += f"rank them on a scale from {scale[0]} to {scale[1]}"
-        elif classes:
-            self.evaluation = 'classes'
-            scenario += f"categorize them into the classes {classes}"
-        scenario += ', please constrain the output only to the result token:\n'
-
-        self.client.setConfig(
-            scenario=scenario,
-            max_new_tokens=self.max_new_tokens,
-            temperature=1.1 
-        )
-    
-    def classify (self, input: str, trys: int=10) -> any:
-
-        '''
-        Trys to classify a provided input.
-
-        [Parameters]
-        input       User input.
-        trys        Will try this many times to generate a classification
-                    within the provided domain.
-        
-        [Return]
-        Returns the classification result in the allowed type.
-        
-        '''
-
-        for _ in range(trys):
-            sample = self.client.contextInference(input)
-            if self.evaluation == 'scale':
-                try:
-                    float(sample)
-                except:
-                    continue
-            elif self.evaluation == 'classes' and sample.lower() not in self.classes:
-                    continue
-            return sample    
-
 class console:
 
     '''
