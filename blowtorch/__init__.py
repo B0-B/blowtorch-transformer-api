@@ -221,13 +221,25 @@ class client:
                 print_exc()
 
     def contextInference (self, input_text: str, sessionId: int=0, username: str='human', char_tags: list[str]=['helpful'],
-                          scenario: None|str=None, **pipe_twargs) -> str:
+                          scenario: None|str=None, cut_unfinished:bool=True, **pipe_twargs) -> str:
 
         '''
         Inference with context tracking.
         Supports LLaMA-2 and LLaMA-3 prompting formats.
         Auto formatting of prompts and post processing included.
         For benchmarks better use client.inference.
+
+        [Parameters]
+        input_text              Prompt string.
+        sessionId               The current conversation identifier.
+                                Different sessionId will have a different context
+        username                Name/role of the user.
+        char_tags               List with string attributes to characterize the assistant 
+                                e.g. ['helpful', 'obedient', 'technically versed'].
+                                Will only work if scenario is None.
+        scenario                A string scenario where everything is specified in a fluent
+                                text string, this will makes char_tags obsolete.
+        cut_unfinished          If enabled, will remove unfinished sentences at the end.
         '''
 
         # clarify twargs by merging with config (if enabled)
@@ -246,6 +258,9 @@ class client:
             if 'scenario' in conf:
                 scenario = conf['scenario']
                 conf.pop('scenario')
+            if 'cut_unfinished' in conf:
+                cut_unfinished = cut_unfinished = conf['cut_unfinished']
+                conf.pop('cut_unfinished')
 
             # override pipe twargs with left twargs in config
             pipe_twargs.update(conf)
@@ -289,8 +304,8 @@ class client:
             # fallback for llama.cpp
             formatted_response = raw_output['choices'][0]['text']
 
-        # prettify the output, clean artifacts etc.
-        response = self.__post_process__(formatted_prompt, formatted_response)
+        # prettify the output, clean artifacts, remove sentences etc.
+        response = self.__post_process__(formatted_prompt, formatted_response, cut_unfinished)
 
         # Append newly received input, output tuple to context
         self.context[sessionId].append((input_text, response))
@@ -743,11 +758,19 @@ class client:
 
             return f'<|start_header_id|>{header}<|end_header_id|>\n\n{input_text.strip()}<|eot_id|>'
 
-    def __post_process__ (self, _input:str, _output:str) -> str:
+    def __post_process__ (self, _input:str, _output:str, cut_unfinished:bool=True) -> str:
 
         '''
         Post-processing method which takes formatted _input and _output from LLM and returns a clean string output.
         This is only raw message and string processing, no transformer tags are added. 
+
+        [Parameter]
+        _input                  Initially prompted input.
+        _output                 Received raw output from prompt.
+        cut_unfinished          If enabled, will remove unfinished sentences at the end.
+        
+        [Return]
+        Processed string.
         '''
 
         # define processed output
@@ -765,8 +788,30 @@ class client:
         # remove potential eos, bos token artifacts
         for token in ['<<SYS>>', '<</SYS>>', '[INST]', '[/INST]' '<</s>', '<<s>', '<s>', '<</s>>']:
             processed = processed.replace(token, '')
+
+        # finally remove unfinished sentences
+        if cut_unfinished:
+            processed = self.__cutoff_unfinished_sentence__(processed)
         
         return processed
+    
+    def __cutoff_unfinished_sentence__ (self, text: str) -> str:
+
+        '''
+        Cuts off unfinished sentences.
+        Example: "This is the first sentence. This is not," -> "This is the first sentence."
+
+        [Parameter]
+        text        Text to cut the unfinished sentence from.
+
+        [Return]
+        String with full sentences only.
+        '''
+        
+        for i in range(len(text)-1, 0, -1):
+            if text[i] in '.?!':
+                return text[:i+1]
+        return ''
 
     # ---- Benchmark Methods ----
     def bench (self, tokens: int=512) -> None:
