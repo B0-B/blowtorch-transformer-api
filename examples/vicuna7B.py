@@ -9,8 +9,7 @@ from blowtorch import client, webUI
 
 cl = client(hugging_face_path='TheBloke/Wizard-Vicuna-7B-Uncensored-GPTQ', 
             name='GPT',
-            device='cpu', 
-            device_map="auto",
+            device='gpu', 
             trust_remote_code=True,
             revision="main")
 

@@ -32,6 +32,11 @@ webUI(myChatClient)
 ```
 
 ## Updates
+### July 3rd, 2024
+- Added automated context-length detection and output, so the user is always aware about the current context length.
+- **Automated context trimming**: If the current aggregated context is too long for the context length the ``auto_trim=True`` argument (can be called in client init or config) will ensure the most recent context which does not overflow the allowed length. Otherwise users are prone to run into errors like [this](https://github.com/langchain-ai/langchain/issues/3751).
+- Added ``cut_unfinished`` argument to client. If enabled all outputs will be truncated to the last fulfilled sentence, unfinished sentences will be cutoff.
+
 ### April 27, 2024
 -  **Now LLaMA-3 support! See the [example](https://github.com/B0-B/blowtorch-transformer-api/tree/main/examples/llama3_GPT.py).** 🦙🦙🦙 
 -  Setup will install latest [xformers](https://github.com/facebookresearch/xformers).

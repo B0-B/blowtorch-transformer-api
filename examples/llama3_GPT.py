@@ -14,7 +14,8 @@ cl = client('Meta-Llama-3-8B-Instruct.Q2_K.gguf',
             'MaziyarPanahi/Meta-Llama-3-8B-Instruct-GGUF', 
             name='Llama-GPT',
             device='cpu',
-            chat_format="llama-3")
+            chat_format="llama-3",
+            n_ctx=2048)
 
 cl.setConfig(
     char_tags=[
@@ -27,8 +28,9 @@ cl.setConfig(
     ], 
     username=USERNAME,
     temperature=1.1, 
-    max_new_tokens=256
+    max_new_tokens=256,
+    auto_trim = True
 )
 
 # expose chat to browser
-webUI(cl)
+console(cl)

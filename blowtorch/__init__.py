@@ -134,8 +134,20 @@ class client:
 
         # create context object
         self.context = {}
-        self.max_bytes_context_length = 4096
-
+        # extract the maximum allowed context length
+        # this will get helpful for context trimming.
+        try:
+            if self.llm_base_module == 'transformers':
+                self.context_length = int(self.model.max_seq_length) 
+            elif self.llm_base_module == 'llama.cpp':
+                self.context_length = int(self.model.n_ctx()) 
+            else:
+                ValueError()
+            self.log(f'Context length detected: {self.context_length}', label='⚠️')
+        except:
+            self.context_length = 512
+            self.log(f'cannot extract context_length, - set default to 512.', label='⚠️')
+        
         # twargs config, which can be pre-set before calling inference, cli or chat
         # use setConfig to define inference twargs
         self.config = None
@@ -221,7 +233,7 @@ class client:
                 print_exc()
 
     def contextInference (self, input_text: str, sessionId: int=0, username: str='human', char_tags: list[str]=['helpful'],
-                          scenario: None|str=None, cut_unfinished:bool=True, **pipe_twargs) -> str:
+                          scenario: None|str=None, cut_unfinished:bool=False, auto_trim: bool=False, **pipe_twargs) -> str:
 
         '''
         Inference with context tracking.
@@ -240,6 +252,8 @@ class client:
         scenario                A string scenario where everything is specified in a fluent
                                 text string, this will makes char_tags obsolete.
         cut_unfinished          If enabled, will remove unfinished sentences at the end.
+        auto_trim               Will automatically trim the context to allowed context_length,
+                                if it gets too long for propagation.
         '''
 
         # clarify twargs by merging with config (if enabled)
@@ -259,8 +273,11 @@ class client:
                 scenario = conf['scenario']
                 conf.pop('scenario')
             if 'cut_unfinished' in conf:
-                cut_unfinished = cut_unfinished = conf['cut_unfinished']
+                cut_unfinished = conf['cut_unfinished']
                 conf.pop('cut_unfinished')
+            if 'auto_trim' in conf:
+                auto_trim = conf['auto_trim']
+                conf.pop('auto_trim')
 
             # override pipe twargs with left twargs in config
             pipe_twargs.update(conf)
@@ -273,12 +290,39 @@ class client:
         if not sessionId in self.context:
             self.newConversation(sessionId, username, char_tags, scenario)
 
+        # Determine the recent context which will be propagated.
+        recent_context = self.context[sessionId]
+        # trim the context
+        if auto_trim:
+            
+            # trimming index - start from whole conversation
+            threshold = 0.9 # [between 0 and 1]
+            n = len(self.context[sessionId]) - 1
+            verbose = True
+            while True:
+
+                trimmed_context = self.context[sessionId][:1] + self.context[sessionId][1:][-n:]
+                concat_context = trimmed_context[0]
+
+                for p, a in trimmed_context[1:]:
+                    concat_context += p + ' ' + a
+                
+                total_tokens = len(self.tokenize(concat_context))
+
+                if total_tokens > threshold * self.context_length:
+                    self.log('trimming context to allowed length ...', label='⚙️') if verbose else None
+                    verbose = False
+                    n -= 1 # trim further
+                else:
+                    recent_context = trimmed_context
+                    break
+
         # Gather a formatted conversation with formatted system_prompt.
-        formatted_conversation = [self.context[sessionId][0]]
+        formatted_conversation = [recent_context[0]]
         do_strip = False
         
         # Reconstruct conversation with correct prompting format
-        for user_input, response in self.context[sessionId][1:]:
+        for user_input, response in recent_context[1:]:
 
             user_input = user_input.strip() if do_strip else user_input
             do_strip = True
@@ -707,7 +751,7 @@ class client:
 
         return twargs
 
-    def __format_prompt__ (self, input_text: str, header: str|None=None, response: str|None=None, system_prompt: bool=False):
+    def __format_prompt__ (self, input_text: str, header: str|None=None, response: str|None=None, system_prompt: bool=False) -> str:
 
         '''
         Sets the correct prompting format, and returns the formatted input.
