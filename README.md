@@ -21,11 +21,11 @@ USERNAME = 'Steve'
 
 # create state-of-the-art chat bot
 myChatClient = client(model_file='Meta-Llama-3-8B-Instruct.Q2_K.gguf', 
-                    hugging_face_path='MaziyarPanahi/Meta-Llama-3-8B-Instruct-GGUF', 
-                    chat_format="llama-3",
-                    device="cpu")
+                      hugging_face_path='MaziyarPanahi/Meta-Llama-3-8B-Instruct-GGUF', 
+                      chat_format="llama-3",
+                      device="cpu")
 
-myChatClient.setConfig(username=USERNAME)
+myChatClient.setConfig(username=USERNAME, max_new_tokens=256, auto_trim=True)
 
 # expose chat in web UI
 webUI(myChatClient)
