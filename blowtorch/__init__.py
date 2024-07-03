@@ -52,19 +52,29 @@ __colors__ = {
 class client:
 
     '''
-    model_file          e.g. llama-2-7b-chat.Q2_K.gguf
-                        specific file from card
-    huggingFacePath     e.g. Writer/palmyra-small
-    device              'cpu' or 'gpu'
-    gpu_layers          number of layers to offload gpus (0 for pure cpu usage)
-    name                the name of the client
-    verbose             if true will disable all warnings
-    silent              if true will disable all console output
-    **twargs            custom trasformer key word arguments
+    A huggingface-compliant AI client for running (large-) language models. 
+    Supports automated loading of models and information handling, character 
+    and prompt feeding API, context- and session tracking, as well as bench options.
+
+    To interface the client instance, it can be passed to an expose object 
+    such as console() or webUI().
     '''
 
     def __init__ (self, model_file:str|None=None, hugging_face_path:str|None=None, chat_format: str='llama-2', device:str='gpu', device_id:int=0,
                   name: str|None=None, verbose: bool=False, silent: bool=False, **twargs) -> None:
+        
+        '''
+        [Parameters]
+        model_file          e.g. llama-2-7b-chat.Q2_K.gguf
+                            specific file from huggingface card
+        huggingFacePath     e.g. Writer/palmyra-small
+        device              'cpu' or 'gpu'
+        gpu_layers          number of layers to offload gpus (0 for pure cpu usage)
+        name                the name of the client
+        verbose             if true will disable all warnings
+        silent              if true will disable all console output
+        **twargs            custom trasformer key word arguments
+        '''
 
         # stdout console logging
         self.silent = silent
