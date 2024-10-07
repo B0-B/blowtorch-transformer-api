@@ -27,6 +27,13 @@ import torch
 import transformers
 from llama_cpp import Llama
 from llama_cpp.llama_tokenizer import LlamaHFTokenizer
+try:
+    from vllm import LLM, SamplingParams
+    __ATTN__ = True
+except ImportError:
+    __ATTN__ = False
+    Warning('[⚠️] No vllm installation found, cannot use attention.')
+
 
 # server
 import _socket
@@ -49,6 +56,7 @@ __colors__ = {
     'nc': '\033[0m'
 }
 
+# ---- clients ----
 class client:
 
     '''
@@ -60,8 +68,17 @@ class client:
     such as console() or webUI().
     '''
 
-    def __init__ (self, model_file:str|None=None, hugging_face_path:str|None=None, chat_format: str='llama-2', device:str='gpu', device_id:int=0,
-                  name: str|None=None, verbose: bool=False, silent: bool=False, **twargs) -> None:
+    def __init__ (self, 
+                  model_file: str|None=None, 
+                  hugging_face_path: str|None=None, 
+                  attention: bool=False,
+                  chat_format: str='llama-3', 
+                  device: str='gpu', 
+                  device_id: int=0,
+                  name: str|None=None, 
+                  verbose: bool=False, 
+                  silent: bool=False, 
+                  **twargs) -> None:
         
         '''
         [Parameters]
@@ -97,70 +114,90 @@ class client:
         else:
             self.name = name
 
-        # select device and device_id and initialize with method
-        self.device = 'cpu'
-        self.device_id = device_id
-        self.selectDevice(device, self.device_id)
-        self.log(f'will use {device} device.', label='⚠️')
+        # use vllm.LLM model as LLM base module corpus if attention is enabled:
+        # - for accelerated GPU inference
+        if attention:
 
-        # collect all arguments for model
-        #   removed model_file as deprecated in transformers but not in ctransformers
-        _twargs = {}
-        for k,v in twargs.items():
-            _twargs[k] = v
-        if 'load_in_8bit' in twargs and twargs['load_in_8bit']:
-            _twargs['load_in_8bit'] = True
-        
-        # denote library/module used
-        self.llm_base_module = 'transformers'
+            # check if vllm is really installed
+            if not __ATTN__:
+                ImportError('Cannot use attention: No vllm installation found. Please install vllm.')
 
-        # try to detect llama version
-        self.chat_format = chat_format
-        for temp in ['llama-2', 'llama-3']:
-            if temp in hugging_face_path.lower() and chat_format != temp:
-                self.log(f'recognized that "{hugging_face_path}" is a {temp} model, but provided the chat_format is "{chat_format}" which could cause problems while prompting!', label='⚠️')
-                break
-            elif temp in hugging_face_path.lower() and chat_format == temp:
-                break
-        
-        # -- load model and tokenizer and instantiate pipeline --
+            self.llm_base_module = 'vllm'
 
-        # load model and tokenizer
-        self.model = None
-        self.tokenizer = None
-        model_loaded = self.loadModel(model_file, hugging_face_path, device, device_id, **twargs)
-        if not model_loaded:
-            exit()
+            # load the model and tokenizer
+            self.model = LLM(hugging_face_path, tokenizer=hugging_face_path, **twargs)
+            self.tokenizer = self.model.get_tokenizer()
+            self.pipe = self.model.generate
+
+        # otherwise check which base module to use:
+        # - transformers module for GPU
+        # - llama.cpp module for CPU
         else:
-            self.log(f'successfully loaded {hugging_face_path}!', label='✅')
-            
-        # create pipeline based on base module
-        if self.llm_base_module == 'transformers':
-            self.pipe = transformers.pipeline("text-generation", model=self.model, tokenizer=self.tokenizer)
-        elif self.llm_base_module == 'llama.cpp':
-            # for llama.cpp the model can be used as pipe
-            # see: https://github.com/abetlen/llama-cpp-python?tab=readme-ov-file#high-level-api
-            self.pipe = self.model
 
-        # create context object
-        self.context = {}
-        # extract the maximum allowed context length
-        # this will get helpful for context trimming.
-        try:
-            if self.llm_base_module == 'transformers':
-                self.context_length = int(self.model.max_seq_length) 
-            elif self.llm_base_module == 'llama.cpp':
-                self.context_length = int(self.model.n_ctx()) 
+            # select device and device_id and initialize with method
+            self.device = 'cpu'
+            self.device_id = device_id
+            self.selectDevice(device, self.device_id)
+            self.log(f'will use {device} device.', label='⚠️')
+
+            # collect all arguments for model
+            #   removed model_file as deprecated in transformers but not in ctransformers
+            _twargs = {}
+            for k,v in twargs.items():
+                _twargs[k] = v
+            if 'load_in_8bit' in twargs and twargs['load_in_8bit']:
+                _twargs['load_in_8bit'] = True
+            
+            # init default library/module used, loadModel will change that accordingly.
+            self.llm_base_module = 'transformers'
+
+            # try to detect llama version
+            self.chat_format = chat_format
+            for temp in ['llama-2', 'llama-3']:
+                if temp in hugging_face_path.lower() and chat_format != temp:
+                    self.log(f'recognized that "{hugging_face_path}" is a {temp} model, but provided the chat_format is "{chat_format}" which could cause problems while prompting!', label='⚠️')
+                    break
+                elif temp in hugging_face_path.lower() and chat_format == temp:
+                    break
+            
+            # -- load model and tokenizer and instantiate pipeline --
+
+            # load model and tokenizer
+            self.model = None
+            self.tokenizer = None
+            model_loaded = self.loadModel(model_file, hugging_face_path, device, device_id, **twargs)
+            if not model_loaded:
+                exit()
             else:
-                ValueError()
-            self.log(f'Context length detected: {self.context_length}', label='⚠️')
-        except:
-            self.context_length = 512
-            self.log(f'cannot extract context_length, - set default to 512.', label='⚠️')
-        
-        # twargs config, which can be pre-set before calling inference, cli or chat
-        # use setConfig to define inference twargs
-        self.config = None
+                self.log(f'successfully loaded {hugging_face_path}!', label='✅')
+                
+            # create pipeline based on base module
+            if self.llm_base_module == 'transformers':
+                self.pipe = transformers.pipeline("text-generation", model=self.model, tokenizer=self.tokenizer)
+            elif self.llm_base_module == 'llama.cpp':
+                # for llama.cpp the model can be used as pipe
+                # see: https://github.com/abetlen/llama-cpp-python?tab=readme-ov-file#high-level-api
+                self.pipe = self.model
+
+            # create context object
+            self.context = {}
+            # extract the maximum allowed context length
+            # this will get helpful for context trimming.
+            try:
+                if self.llm_base_module == 'transformers':
+                    self.context_length = int(self.model.max_seq_length) 
+                elif self.llm_base_module == 'llama.cpp':
+                    self.context_length = int(self.model.n_ctx()) 
+                else:
+                    ValueError()
+                self.log(f'Context length detected: {self.context_length}', label='⚠️')
+            except:
+                self.context_length = 512
+                self.log(f'cannot extract context_length, - set default to 512.', label='⚠️')
+            
+            # twargs config, which can be pre-set before calling inference, cli or chat
+            # use setConfig to define inference twargs
+            self.config = None
 
     def chat (self, username: str='human', char_tags: list[str]=['helpful'], scenario: str=None, show_duration: bool=True, auto_trim: bool=False, **pipe_twargs) -> None:
 
@@ -404,7 +441,10 @@ class client:
         Inference of input through model using the transformer pipeline.
         '''
         
-        return self.pipe(input_text, **pipe_twargs)
+        if self.llm_base_module == 'vllm':
+            return self.pipe([input_text], SamplingParams(**pipe_twargs))
+        else:
+            return self.pipe(input_text, **pipe_twargs)
 
     def loadModel (self, model_file:str|None=None, hugging_face_path:str|None=None, device:str='gpu', device_id:int=0, **twargs) -> bool:
 
@@ -651,6 +691,9 @@ class client:
             return self.tokenizer.encode(string)
         elif self.llm_base_module == 'llama.cpp':
             return self.tokenizer(string.encode())
+        elif self.llm_base_module == 'vllm':
+            return self.tokenizer.encode(string, return_tensors="pt")
+
     
     # ---- Config Handling ----
     def setConfig (self, **twargs) -> None:
@@ -740,6 +783,8 @@ class client:
     def __convert_twargs__ (self, twargs: dict) -> dict:
 
         '''
+        blowtorch tries to bring simplicity through consistent naming scheme of variables.
+        It converts faulty parameters from transformers language to the llm_base_module format. 
         Converts the assembled twargs element used in methods:
 
         - client.inference
@@ -755,9 +800,23 @@ class client:
                 twargs['max_tokens'] = twargs['max_new_tokens']
                 twargs.pop('max_new_tokens')
             
+            if 'min_new_tokens' in twargs:
+                twargs['min_tokens'] = twargs['min_new_tokens']
+                twargs.pop('min_new_tokens')
+            
             if 'repetition_penalty' in twargs:
                 twargs['repeat_penalty'] = twargs['repetition_penalty']
                 twargs.pop('repetition_penalty')
+        
+        if self.llm_base_module == 'vllm':
+
+            if 'max_new_tokens' in twargs:
+                twargs['max_tokens'] = twargs['max_new_tokens']
+                twargs.pop('max_new_tokens')
+            
+            if 'min_new_tokens' in twargs:
+                twargs['min_tokens'] = twargs['min_new_tokens']
+                twargs.pop('min_new_tokens')
 
         return twargs
 
@@ -978,6 +1037,11 @@ class client:
 
         return (vram_usage, suffix[ind])
 
+
+
+
+
+# ---- exposers ----
 class console:
 
     '''

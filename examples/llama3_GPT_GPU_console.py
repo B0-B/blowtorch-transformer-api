@@ -26,7 +26,7 @@ cl.setConfig(
     ], 
     username=USERNAME,
     temperature=1.1, 
-    max_new_tokens=256
+    max_new_tokens=512
 )
 
 # expose chat to browser
