@@ -388,12 +388,8 @@ class client:
         # -> inference
         raw_output = self.inference(formatted_prompt, **pipe_twargs)
         
-        # try to extract the generated text
-        try:
-            formatted_response = raw_output[0]['generated_text']
-        except KeyError:
-            # fallback for llama.cpp
-            formatted_response = raw_output['choices'][0]['text']
+        # try to extract the generated text (DEPRECATED - as extraction happens in inference method)
+        formatted_response = raw_output
 
         # prettify the output, clean artifacts, remove sentences etc.
         response = self.__post_process__(formatted_prompt, formatted_response, cut_unfinished)
@@ -435,7 +431,7 @@ class client:
 
         return outputString
     
-    def inference (self, input_text:str, **pipe_twargs) -> list[dict[str,str]]:
+    def inference (self, input_text: str, **pipe_twargs) -> str:
 
         '''
         Inference of input through model using the transformer pipeline.
@@ -443,8 +439,10 @@ class client:
         
         if self.llm_base_module == 'vllm':
             return self.pipe([input_text], SamplingParams(**pipe_twargs))[0]
+        elif self.llm_base_module == 'llama.cpp':
+            return self.pipe(input_text, **pipe_twargs)['choices'][0]['text']
         else:
-            return self.pipe(input_text, **pipe_twargs)
+            return self.pipe(input_text, **pipe_twargs)[0]['generated_text']
 
     def loadModel (self, model_file:str|None=None, hugging_face_path:str|None=None, device:str='gpu', device_id:int=0, **twargs) -> bool:
 
