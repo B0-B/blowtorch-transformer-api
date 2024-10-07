@@ -162,7 +162,7 @@ class client:
         # use setConfig to define inference twargs
         self.config = None
 
-    def chat (self, username: str='human', char_tags: list[str]=['helpful'], scenario: str=None, show_duration: bool=True, **pipe_twargs) -> None:
+    def chat (self, username: str='human', char_tags: list[str]=['helpful'], scenario: str=None, show_duration: bool=True, auto_trim: bool=False, **pipe_twargs) -> None:
 
         '''
         A text-to-text chat loop with context aggregator.
@@ -215,7 +215,7 @@ class client:
                 # inference -> get raw string output
                 # forward the new input through context pipeline
                 processed_output = self.contextInference(new_input, sessionId=id, username=username, 
-                                                         char_tags=char_tags, scenario=scenario, **pipe_twargs)
+                                                         char_tags=char_tags, scenario=scenario, auto_trim=auto_trim, **pipe_twargs)
                 
                 # stop watch
                 if show_duration: 
