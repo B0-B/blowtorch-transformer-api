@@ -8,11 +8,11 @@ Will be reachable at http://localhost:3000/
 
 from blowtorch import client, webUI
 
-cl = client('llama-2-7b-chat.Q2_K.gguf', 
-            'TheBloke/Llama-2-7B-Chat-GGUF', 
+cl = client(model_file='Meta-Llama-3-8B-Instruct.Q2_K.gguf', 
+            hugging_face_path='MaziyarPanahi/Meta-Llama-3-8B-Instruct-GGUF', 
+            chat_format="llama-3",
             name='GPT',
-            device='cpu', 
-            model_type="llama",
+            device='cpu',
             context_length = 6000)
 
 cl.setConfig(

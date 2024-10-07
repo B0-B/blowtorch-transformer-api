@@ -6,13 +6,13 @@ Chat with the actor, body-building legend, and former governer himself!
 
 from blowtorch import client
 
-client('llama-2-7b-chat.Q2_K.gguf', 
-           'TheBloke/Llama-2-7B-Chat-GGUF', 
-           name='Arnold',
-           device='cpu', 
-           model_type="llama",
-           max_new_tokens = 1000,
-           context_length = 6000
+client( model_file='Meta-Llama-3-8B-Instruct.Q2_K.gguf', 
+        hugging_face_path='MaziyarPanahi/Meta-Llama-3-8B-Instruct-GGUF', 
+        chat_format="llama-3",
+        name='Arnold',
+        device='cpu', 
+        max_new_tokens = 1000,
+        context_length = 6000
 ).chat(
     max_new_tokens=128, 
     char_tags=[
