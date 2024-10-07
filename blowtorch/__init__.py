@@ -442,7 +442,7 @@ class client:
         '''
         
         if self.llm_base_module == 'vllm':
-            return self.pipe([input_text], SamplingParams(**pipe_twargs))
+            return self.pipe([input_text], SamplingParams(**pipe_twargs))[0]
         else:
             return self.pipe(input_text, **pipe_twargs)
 
