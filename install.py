@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
-#
+###############################################################################
 # blowtorch auto-install script. Will install provided wheel in ./dist branch.
 # https://github.com/B0-B/blowtorch-transformer-api
-
-
+###############################################################################
 
 from os import system as shell, chdir
 from pathlib import Path

@@ -78,18 +78,6 @@ This project used to leverage ``ctransformers`` as GGML library for loading GGUF
 |tokenizers|0.19.1|
 |*ctransformers*|**deprecated**|
 
-## Tests
-|Vendor|Device|Model|Quality Assurance|
-|-|-|-|-|
-|AMD|GPU|MI300x|✅|
-|AMD|GPU|MI210x|✅|
-|AMD|GPU|RDNA3|✅|
-|AMD|GPU|RDNA2|✅|
-|AMD|GPU|RDNA1|✅|
-|AMD|CPU|Ryzen 3950x|✅|
-
-
-
 
 ## Docs
 
