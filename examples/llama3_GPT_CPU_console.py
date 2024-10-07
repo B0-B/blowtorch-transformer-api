@@ -8,11 +8,12 @@ Will be reachable at http://localhost:3000/
 
 from blowtorch import client, webUI, console
 
-USERNAME = 'Steve'
+USERNAME = 'User'
+ASSISTANT_NAME = 'Assistant'
 
 cl = client('Meta-Llama-3-8B-Instruct.Q2_K.gguf', 
             'MaziyarPanahi/Meta-Llama-3-8B-Instruct-GGUF', 
-            name='Llama-GPT',
+            name='ASSISTANT_NAME',
             device='cpu',
             chat_format="llama-3",
             n_ctx=2048)
@@ -28,7 +29,7 @@ cl.setConfig(
     ], 
     username=USERNAME,
     temperature=1.1, 
-    max_new_tokens=256,
+    max_new_tokens=512,
     auto_trim = True
 )
 
