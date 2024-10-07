@@ -13,7 +13,7 @@
 
 ---
 
-## To give a taste..
+## 
 ```python
 from blowtorch import client, webUI
 
@@ -32,6 +32,10 @@ webUI(myChatClient)
 ```
 
 ## Updates
+### Oct 7, 2024
+- Added **vLLM** support to ``client`` for accelerated inference - accessible via boolean ``attention`` flag
+- Added ``auto_trim`` argument to ``client.chat`` method
+
 ### July 3rd, 2024
 - Added automated context-length detection and output, so the user is always aware about the current context length.
 - **Automated context trimming**: If the current aggregated context is too long for the context length the ``auto_trim=True`` argument (can be called in client init or config) will ensure the most recent context which does not overflow the allowed length. Otherwise users are prone to run into errors like [this](https://github.com/langchain-ai/langchain/issues/3751).
@@ -42,14 +46,13 @@ webUI(myChatClient)
 -  Setup will install latest [xformers](https://github.com/facebookresearch/xformers).
 
 ## Features
-- Simple to install with automated setup and model setup in just 2 lines.
-- Supports various LLaMA versions for prompting in different formats and manages corresponding arguments (transformers, llama.cpp).
-- Works for Windows (only CPU tested) and Linux (CPU/GPU)
-- PyTorch and transformer compliant - respects keyword arguments from e.g. [``transformer.pipeline``](https://github.com/huggingface/transformers/blob/v4.40.1/src/transformers/pipelines/__init__.py#L562), with auto conversion to [llama.cpp](https://github.com/ggerganov/llama.cpp)
-- Creates a customizable chat bot with specified character.
-- Easy to understand, with few objects which can handle any case.
-- Loads models directly from huggingface and store them in local cache.
-- Has automatic fallbacks for different weight formats (e.g. GGML, GGUF, bin, ..)
+- Runs on **Windows** (only CPU tested) and **Linux** (CPU/GPU)
+- Easy to understand, with single client object for any use-case.
+- Supports various llm base modules (transformers, llama.cpp, vllm): *Depending if CPU or GPU device is selected blowtorch auto-loads models in [``transformer.pipeline``](https://github.com/huggingface/transformers/blob/v4.40.1/src/transformers/pipelines/__init__.py#L562) or [llama.cpp](https://github.com/ggerganov/llama.cpp) using fallbacks for different weight formats (e.g. GGML, GGUF, bin, ..). Otherwise, if ``attention`` is enabled will use ``vLLM.LLM`` for accelerated inference (if vllm is installed).*
+- Simple character or scenarios API for fully customizable chat bots.
+- Simple to install and use - a model is setup in just 2 lines.
+- Supports various LLaMA prompt embeddings and manages corresponding auto-converts arguments between [``transformer.pipeline``](https://github.com/huggingface/transformers/blob/v4.40.1/src/transformers/pipelines/__init__.py#L562), [llama.cpp](https://github.com/ggerganov/llama.cpp) and vLLM.
+- Automated model handling, chat and context tracking between multiple converstations.
 
 ## Base Requirements   
 - Python >=3.10.12
@@ -65,35 +68,27 @@ This project used to leverage ``ctransformers`` as GGML library for loading GGUF
 
 |**library**|**version**|
 |-|-|
-|transformers|4.37.2|
+|transformers|4.43.2|
 |llama-cpp-python|latest|
 |accelerate|0.30.0|
 |h5py|3.9.0|
 |psutil|latest|
 |optimum|latest|
 |auto-gptq|0.7.1|
+|tokenizers|0.19.1|
 |*ctransformers*|**deprecated**|
 
 ## Tests
 |Vendor|Device|Model|Quality Assurance|
 |-|-|-|-|
 |AMD|GPU|MI300x|✅|
+|AMD|GPU|MI210x|✅|
 |AMD|GPU|RDNA3|✅|
 |AMD|GPU|RDNA2|✅|
 |AMD|GPU|RDNA1|✅|
 |AMD|CPU|Ryzen 3950x|✅|
 
-## Tested Models
 
-|Model|recommended device|
-|-|-|
-|MaziyarPanahi/Meta-Llama-3-8B-Instruct-GGUF|CPU|
-|NousResearch/Llama-2-7b-chat-hf|GPU|
-|NousResearch/Llama-2-7b-chat-hf|GPU|
-|TheBloke/Llama-2-7B-Chat-GGUF|CPU|
-|TheBloke/Llama-2-7b-Chat-GPTQ|GPU|
-|TheBloke/Mistral-7B-Instruct-v0.2-GGUF|CPU|
-|TheBloke/Wizard-Vicuna-7B-Uncensored-GPTQ|GPU/CPU|
 
 
 ## Docs

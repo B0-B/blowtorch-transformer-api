@@ -24,7 +24,8 @@ dependencies = [
   "eager",
   "optimum",
   "auto-gptq==0.7.1",
-  "transformers==4.37.2"
+  "transformers==4.43.2",
+  "tokenizers==0.19.1"
 ]
 
 [project.urls]
