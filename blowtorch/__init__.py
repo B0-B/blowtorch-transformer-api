@@ -77,7 +77,7 @@ class client:
                   device: str='gpu', 
                   device_id: int=0,
                   name: str|None=None, 
-                  verbose: bool=False, 
+                  verbose: bool=True, 
                   silent: bool=False, 
                   **twargs) -> None:
         
