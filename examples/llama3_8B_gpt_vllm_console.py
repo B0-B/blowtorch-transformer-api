@@ -6,7 +6,8 @@ A GPT-like example of LLama-3-8B chat accelerated with vLLM's flash-attn. backen
 from blowtorch import client, console
 
 chat_bot = client(hugging_face_path='MaziyarPanahi/Meta-Llama-3-8B-Instruct-GPTQ',
-                  attention=True, # setting attention to true
+                  attention=True,       # setting attention to true
+                  quantization='gptq',  # set correct quantization (needed when attention is enabled)
                   name='llama-bot',
                   chat_format='llama-3',
                   device='gpu')
