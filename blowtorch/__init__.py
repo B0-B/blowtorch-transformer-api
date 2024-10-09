@@ -457,7 +457,7 @@ class client:
         '''
         
         if self.llm_base_module == 'vllm':
-            return self.pipe([input_text], SamplingParams(**pipe_twargs))[0]
+            return self.pipe([input_text], SamplingParams(**pipe_twargs))[0].outputs[0].text        
         elif self.llm_base_module == 'llama.cpp':
             return self.pipe(input_text, **pipe_twargs)['choices'][0]['text']
         else:
