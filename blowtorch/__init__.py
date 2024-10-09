@@ -457,6 +457,8 @@ class client:
         '''
         
         if self.llm_base_module == 'vllm':
+            if 'stop_token_ids' not in pipe_twargs:
+                pipe_twargs['stop_token_ids'] = ['<|eot_id|>', '</s>']
             return self.pipe([input_text], SamplingParams(**pipe_twargs))[0].outputs[0].text        
         elif self.llm_base_module == 'llama.cpp':
             return self.pipe(input_text, **pipe_twargs)['choices'][0]['text']
@@ -915,8 +917,23 @@ class client:
         elif 'assistant' in processed[:len(self.name)+20]:
             processed = processed.replace('assistant', '', 1)
 
-        # remove potential eos, bos token artifacts
-        for token in ['<<SYS>>', '<</SYS>>', '[INST]', '[/INST]' '<</s>', '<<s>', '<s>', '<</s>>']:
+        # format-specific processing
+        if self.chat_format == 'llama-2':
+
+            # remove potential eos, bos token artifacts
+            pad_tokens = ['<<SYS>>', '<</SYS>>', '[INST]', '[/INST]' '<</s>', '<<s>', '<s>', '<</s>>']
+            
+        elif self.chat_format == 'llama-3':
+            
+            # if eot token was found cut there
+            if '<|eot_id|>' in processed:
+                processed = processed.split('<|eot_id|>')[0]
+            
+            # otherwise remove all rest tokens.
+            pad_tokens = ['<|eot_id|>', '<|start_header_id|>', '<|end_header_id|>']
+
+        # remove format-specific pad tokens
+        for token in pad_tokens:
             processed = processed.replace(token, '')
 
         # finally remove unfinished sentences
