@@ -457,8 +457,8 @@ class client:
         '''
         
         if self.llm_base_module == 'vllm':
-            if 'stop_token_ids' not in pipe_twargs:
-                pipe_twargs['stop_token_ids'] = ['<|eot_id|>', '</s>']
+            if 'stop' not in pipe_twargs:
+                pipe_twargs['stop'] = ['<|eot_id|>', '</s>']
             return self.pipe([input_text], SamplingParams(**pipe_twargs))[0].outputs[0].text        
         elif self.llm_base_module == 'llama.cpp':
             return self.pipe(input_text, **pipe_twargs)['choices'][0]['text']
