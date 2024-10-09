@@ -15,6 +15,7 @@ from string import punctuation
 import warnings
 
 # system
+import os
 import psutil
 import subprocess
 import platform
@@ -82,6 +83,7 @@ class client:
         
         '''
         [Parameters]
+
         model_file          e.g. llama-2-7b-chat.Q2_K.gguf
                             specific file from huggingface card
         huggingFacePath     e.g. Writer/palmyra-small
@@ -114,6 +116,23 @@ class client:
         else:
             self.name = name
 
+        # collect all arguments for model
+        #   removed model_file as deprecated in transformers but not in ctransformers
+        _twargs = {}
+        for k,v in twargs.items():
+            _twargs[k] = v
+        if 'load_in_8bit' in twargs and twargs['load_in_8bit']:
+            _twargs['load_in_8bit'] = True
+
+        # try to detect llama version
+        self.chat_format = chat_format
+        for temp in ['llama-2', 'llama-3']:
+            if temp in hugging_face_path.lower() and chat_format != temp:
+                self.log(f'recognized that "{hugging_face_path}" is a {temp} model, but provided the chat_format is "{chat_format}" which could cause problems while prompting!', label='⚠️') if verbose else None
+                break
+            elif temp in hugging_face_path.lower() and chat_format == temp:
+                break
+
         # use vllm.LLM model as LLM base module corpus if attention is enabled:
         # - for accelerated GPU inference
         if attention:
@@ -122,7 +141,16 @@ class client:
             if not __ATTN__:
                 ImportError('Cannot use attention: No vllm installation found. Please install vllm.')
 
+            self.log('attention activated -> routing to vllm ...', label='⚠️') if verbose else None
             self.llm_base_module = 'vllm'
+
+            # unfortunately it isn't possible to pin the LLM object to a specific cuda device:
+            # https://github.com/vllm-project/vllm/issues/3750
+            # will therefore use the environment workaround
+            os.environ["CUDA_VISIBLE_DEVICES"] = f"{device_id}"
+            self.device = 'gpu'
+            self.device_id = device_id
+            self.selectDevice(device, self.device_id)
 
             # load the model and tokenizer
             self.model = LLM(hugging_face_path, tokenizer=hugging_face_path, **twargs)
@@ -138,28 +166,12 @@ class client:
             self.device = 'cpu'
             self.device_id = device_id
             self.selectDevice(device, self.device_id)
-            self.log(f'will use {device} device.', label='⚠️')
-
-            # collect all arguments for model
-            #   removed model_file as deprecated in transformers but not in ctransformers
-            _twargs = {}
-            for k,v in twargs.items():
-                _twargs[k] = v
-            if 'load_in_8bit' in twargs and twargs['load_in_8bit']:
-                _twargs['load_in_8bit'] = True
+            self.log(f'will use {device} device.', label='⚠️') if verbose else None            
             
-            # init default library/module used, loadModel will change that accordingly.
+            # init default library/module used, 
+            # client.loadModel will change that accordingly.
             self.llm_base_module = 'transformers'
 
-            # try to detect llama version
-            self.chat_format = chat_format
-            for temp in ['llama-2', 'llama-3']:
-                if temp in hugging_face_path.lower() and chat_format != temp:
-                    self.log(f'recognized that "{hugging_face_path}" is a {temp} model, but provided the chat_format is "{chat_format}" which could cause problems while prompting!', label='⚠️')
-                    break
-                elif temp in hugging_face_path.lower() and chat_format == temp:
-                    break
-            
             # -- load model and tokenizer and instantiate pipeline --
 
             # load model and tokenizer
@@ -169,7 +181,7 @@ class client:
             if not model_loaded:
                 exit()
             else:
-                self.log(f'successfully loaded {hugging_face_path}!', label='✅')
+                self.log(f'successfully loaded {hugging_face_path}!', label='✅') if verbose else None
                 
             # create pipeline based on base module
             if self.llm_base_module == 'transformers':
@@ -179,27 +191,34 @@ class client:
                 # see: https://github.com/abetlen/llama-cpp-python?tab=readme-ov-file#high-level-api
                 self.pipe = self.model
 
-            # create context object
-            self.context = {}
-            # extract the maximum allowed context length
-            # this will get helpful for context trimming.
-            try:
-                if self.llm_base_module == 'transformers':
-                    self.context_length = int(self.model.max_seq_length) 
-                elif self.llm_base_module == 'llama.cpp':
-                    self.context_length = int(self.model.n_ctx()) 
-                else:
-                    ValueError()
-                self.log(f'Context length detected: {self.context_length}', label='⚠️')
-            except:
-                self.context_length = 512
-                self.log(f'cannot extract context_length, - set default to 512.', label='⚠️')
-            
-            # twargs config, which can be pre-set before calling inference, cli or chat
-            # use setConfig to define inference twargs
-            self.config = None
+        # create context object
+        self.context = {}
+        # extract the maximum allowed context length
+        # this will get helpful for context trimming.
+        try:
+            if self.llm_base_module == 'transformers':
+                self.context_length = int(self.model.max_seq_length) 
+            elif self.llm_base_module == 'llama.cpp':
+                self.context_length = int(self.model.n_ctx()) 
+            elif self.llm_base_module == 'vllm':
+                self.context_length = self.model.config.n_ctx
+            else:
+                ValueError()
+            self.log(f'Context length detected: {self.context_length}', label='⚠️') if verbose else None
+        except:
+            self.context_length = 512
+            self.log(f'cannot extract context_length, - set default to 512.', label='⚠️') if verbose else None
+        
+        # twargs config, which can be pre-set before calling inference, cli or chat
+        # use setConfig to define inference twargs
+        self.config = None
 
-    def chat (self, username: str='human', char_tags: list[str]=['helpful'], scenario: str=None, show_duration: bool=True, **pipe_twargs) -> None:
+    def chat (self, 
+              username: str='human', 
+              char_tags: list[str]=['helpful'], 
+              scenario: str=None, 
+              show_duration: bool=True, 
+              **pipe_twargs) -> None:
 
         '''
         A text-to-text chat loop with context aggregator.
