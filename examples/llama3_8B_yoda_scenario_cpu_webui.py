@@ -12,8 +12,8 @@ Your are a true loyal Jedi master with an encouraging spirit.'''
 
 from blowtorch import client, console, webUI
 
-cl = client('llama-2-7b-chat.Q2_K.gguf', 
-            'TheBloke/Llama-2-7B-Chat-GGUF', 
+cl = client('Meta-Llama-3-8B-Instruct.Q2_K.gguf', 
+            'MaziyarPanahi/Meta-Llama-3-8B-Instruct-GGUF', 
             name='Yoda',
             device='cpu', 
             model_type="llama",
@@ -30,4 +30,3 @@ cl.setConfig(
 )
 
 webUI(cl)
-# console(cl)
