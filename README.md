@@ -167,11 +167,11 @@ Generally, LLMs are designed to predict the next word in a sequence. Loading an 
 First, to download and run an arbitrary huggingface model
 
 ```python
-cl = client(hugging_face_path='TheBloke/Llama-2-7b-Chat-GPTQ', 
+cl = client(hugging_face_path='MaziyarPanahi/Meta-Llama-3-8B-Instruct-GPTQ', 
             name='GPT',
             device='gpu', # <-- select GPU as device
             device_id=0,  # <-- optionally select the GPU id
-            model_type="llama",
+            model_type="llama-3",
             trust_remote_code=False,
             revision="main")
 ```
@@ -193,32 +193,9 @@ cl.chat(
     repetition_penalty=1.1)
 ```
 
-or expose with an expose object.
-
-## Expose Objects for your Chat
-
-The two main ways to expose your chat are
-
- - **console** - which runs in the console (terminal) of your current runtime. *Alias for client.chat.*
- - **webUI** - which starts a webserver with hosted UI in the browser
-
-which can be imported in your python project
+Alternatively, the ``setConfig`` method allows to do the pre-configuration analogously
 
 ```python
-from blowtorch import console, webUI
-```
-
-As shown in this snippet, ``blowtorch.console`` object can be used as an alias for `blowtorch.chat` method but demands setting a config apriori. The chat arguments can also be pre-loaded (often useful) with the ``setConfig`` method. Then all other methods (like chat) or exposing objects require no arguments anymore. Note, variables ``do_sample, temperature, repetition_penalty`` are additional ``transformer`` kwargs, that will be accepted as well. 
-
-```python
-cl = client('llama-2-7b-chat.Q2_K.gguf', 
-            'TheBloke/Llama-2-7B-Chat-GGUF', 
-            name='AI',
-            device='cpu', 
-            model_type="llama",
-            max_new_tokens = 1000,
-            context_length = 6000)
-
 # it is recommended to first set the config
 cl.setConfig(
     char_tags=[
@@ -234,9 +211,34 @@ cl.setConfig(
 )
 
 cl.chat() # no arguments needed anymore
-
-console(cl) # equivalent call to cl.chat()
 ```
+
+## Accelerated Inference
+Blowtorch API can access flash-attn. backend via vLLM (requires vLLM install with python module) for an accelerated chat on GPU. Simply enable the attention flag in the client to access the feature.
+
+```python
+chat_bot = client(hugging_face_path='MaziyarPanahi/Meta-Llama-3-8B-Instruct-GPTQ',
+                  attention=True,       # setting attention to true
+                  quantization='gptq',  # set correct quantization (needed when attention is enabled)
+                  name='llama-bot',
+                  chat_format='llama-3',
+                  device='gpu')
+```
+
+## Exposers for your Chat
+
+The two main ways to expose your chat are
+
+ - **console** - which runs in the console (terminal) of your current runtime. *Alias for client.chat.*
+ - **webUI** - which starts a webserver with hosted UI in the browser
+
+which can be imported in your python project
+
+```python
+from blowtorch import console, webUI
+```
+
+As shown in this snippet, ``blowtorch.console`` object can be used as an alias for `blowtorch.chat` method but demands setting a config apriori. The chat arguments can also be pre-loaded (often useful) with the ``setConfig`` method. Then all other methods (like chat) or exposing objects require no arguments anymore. Note, variables ``do_sample, temperature, repetition_penalty`` are additional ``transformer`` kwargs, that will be accepted as well. 
 
 Once the configuration of a client is setup, it may be exposed via a **web server** for a better GUI **(for more info see web UI section)**
 
@@ -265,75 +267,14 @@ webUI(cl)
 
 
 
-
-
-<!-- API EXAMPLES -->
-<details>
-<summary style="font-size:2rem">Chat API</summary>
-
----
-
-
-The following is an example of loading quantization level, like a model file (from huggingface card) in **GGUF** format. If CPU is used, as GGML models are really well suited for CPU, it will be automatically loaded with [llama.cpp](https://github.com/marella/ctransformers) in a single line. 
-
-blowtorch's chat method tracks the context, so the LLM can argue and even write code.
-For better output increase the max token size.
-
-```python
-from blowtorch import client
-client('llama-2-7b-chat.Q2_K.gguf', 'TheBloke/Llama-2-7B-Chat-GGUF', 'cpu', model_type="llama").chat(max_new_tokens=512, temperature=0.8, repetition_penalty=1.1)
-```
-
-    Human: please create a python script which loads a huggingface model into transformers.
-    AI Assistant: Of course! To load a Hugging Face model into Transformers, you will need to use the `transformers` library. Here's an example of how you can do this:
-    ```
-    import pandas as pd
-    from transformers import AutoTokenizer, AutoModelForSequenceClassification# Load the Hugging Face model
-    model_name = "bert-base-uncased"
-    tokenizer = AutoTokenizer.from_pretrained(model_name)# Create a new dataset for training
-    train_data = pd.DataFrame({"text": ["This is a test sentence."], "label": [1]})# Train the model
-    model = AutoModelForSequenceClassification.from_pretrained(tokenizer, train_data=train_data)
-    ```
-    Please let me know if you have any questions or need further assistance.
-    (82.27s)
-
-An attempt to write a letter:
-
-    human: Write a letter of a russia soldier who writes a letter from germany in 1945 to his mother in Russia.
-
-    Llama-2-7B-Chat-GGUF:  Unterscheidung von der Ukraine und Belarus.
-    Dear Mother,
-    I hope this letter finds you in good health and spirits. I am writing to you from Germany, where I have been deployed with my unit since the beginning of this year. It has been a long and 
-    difficult journey, but I am proud to be serving my country in this time of need.
-    The war in Europe is coming to an end, and we are close to victory. I can see the end of the tunnel, and I know that soon we will be able to return home and rebuild our country. I am proud of what we have accomplished so far, and I know that our sacrifices will not be forgotten.
-    But even in the midst of all this chaos and destruction, I cannot help but think of you and father back in Russia. I miss you both dearly, and I wish you were here with me to share in this momentous occasion. I know that you are proud of me too, and I hope that you are taking care of yourselves and staying safe during these difficult times.
-    Mother, I want you to know that I have seen many things on this journey that I will never forget. The sights and sounds of war are something that no one should ever have to experience, but I know that it is something that I will always carry with me. I have seen the worst of humanity, but I have also seen the best. I have seen people come together in ways that I never thought possible, and I have seen the resilience and strength of the human spirit.
-    I know that this war will soon be over, and I will be returning home to you and father. I cannot wait to hold you both in my arms again and to start rebuilding our lives together. Until then, know that I love you both more than anything in the world, and that I will always be with you in spirit.
-    Your loving son,
-    [Soldier's Name]
-</details>
-
-
-
-
-
-
 <!-- GPT CHAT  -->
 <details>
-<summary style="font-size:2rem">Custom GPT Chat</summary>
+<summary style="font-size:2rem">Custom Character</summary>
 
-## Char Tags
+## Character Tags & Scenarios
 
-The chat function of blowtorch can create a gpt-like chatbot, with a specified character.
-
-    User: Hello, AI.
-    AI: Hello! How can I assist you today?
-    human: can you help me a physics question?       
-    AI: Of course, I'd be happy to help! What is the question?
-    human: Can you explain me Ehrnfest's theorem?
-    AI: Of course, I'd be happy to help! Ehrnfest's Theorem states that if two functions are continuous on the same interval, then their compositions are also continuous on that interval. Let me know if you have any questions or need further clarification.
-
-Also blowtorch can impersonate people, like well known celebrities, here is an example of a cheeky chatbot who talks like Arnold Schwarzenegger
+### Character Tags
+The chat function of blowtorch can create a custom flavored (or guided) chat without any training with a specified character or a whole impersonation. Here is an example of a cheeky chatbot who talks like Arnold Schwarzenegger
 
 ```python
 from blowtorch import client
@@ -388,7 +329,7 @@ also we can play a game of **guess who**
     Arnold: *excitedly* Oh boy, this is getting interesting! *nods* So, this person lived over 2000 years ago? *asks innocently* And what else can you tell me about them? *curious expression*
     human: Yes!
 
-## Scenarios
+### Scenarios
 Besides the ``char_tags`` to give your chat bot attributes or shape his character a bit,
 the ``setConfig`` method provides a more in-depth initialization option called ``scenario`` to give users more freedom to create their personalized main frame. An example of a scenario where a film scene is depicted for a cosplay between the user and the AI
 
@@ -447,7 +388,7 @@ from blowtorch import webUI
 webUI(cl, port=3000)
 ```
 
-**Note:** Every TCP connection, i.e. browser window, tab will initiliaze a new session ID which is passed to the server who keeps track of different conversations and distinguishes them.
+**Note:** Every TCP connection, i.e. browser window, tab will initiliaze a new session ID which is passed to the server who keeps track of different conversations and distinguishes them across the local network.
 
 </details>
 
