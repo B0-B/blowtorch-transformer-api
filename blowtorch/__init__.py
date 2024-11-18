@@ -978,7 +978,7 @@ class client:
         # as vllm will otherwise only generate a single new token
         bench_prompt = 'please write a generic long letter'
         if self.llm_base_module == 'vllm':
-            bench_prompt = self.__format__(bench_prompt)
+            bench_prompt = self.__format_prompt__(bench_prompt)
 
         # Perform benchmark
         stopwatch_start = perf_counter_ns()
