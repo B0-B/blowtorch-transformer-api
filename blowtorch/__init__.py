@@ -972,10 +972,10 @@ class client:
 
         kwargs = self.__convert_twargs__({'max_new_tokens': tokens})
 
-        self.log('start benchmark ...', label='⏱️')
+        self.log('Start benchmark ...', label='⏱️')
 
         stopwatch_start = perf_counter_ns()
-        raw_output = self.pipe('please write a generic long letter', **kwargs)
+        raw_output = self.inference('please write a generic long letter', **kwargs)
         stopwatch_stop = perf_counter_ns()
         
 
@@ -983,19 +983,9 @@ class client:
         memory_usage = self.ramUsage() # memory occupied by the process in total
         vram_usage = self.vramUsage() # memory allocated b torch on gpu
 
-        # unpack
-        # try to extract the generated text
-        # print('raw_output', raw_output['choices'][0]['text'])
-        string = ''
-        try:
-            string = raw_output[0]['generated_text']
-        except KeyError:
-            # fallback for llama.cpp
-            string = raw_output['choices'][0]['text']
-
         # count tokens
-        tokens = len(self.tokenize(string))
-        bytes = len(string)
+        tokens = len(self.tokenize(raw_output))
+        bytes = len(raw_output)
 
         # compute statistics
         duration = (stopwatch_stop - stopwatch_start) * 1e-9
@@ -1016,7 +1006,7 @@ class client:
             f'\nMax. Token Window: {tokens}',
             f'\nTokens Generated: {tokens}',
             f'\nBytes Generated: {bytes } bytes'
-            f'\nToken Rate: {token_rate} tokens/s', 
+            f'\nOutput Token Rate: {token_rate} tokens/s', 
             f'\nData Rate: {data_rate} bytes/s',
             f'\nBit Rate: {bit_rate} bit/s',
             f'\nTPOT: {tpot} ms/token',
