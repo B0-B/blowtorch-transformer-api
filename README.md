@@ -32,6 +32,10 @@ webUI(myChatClient)
 ```
 
 ## Updates
+
+### Nov 18, 2024
+- Fixed the ``client.bench`` method.
+  
 ### Oct 7, 2024
 - Added **vLLM** support to ``client`` for accelerated inference - accessible via boolean ``attention`` flag
 - Added ``auto_trim`` argument to ``client.chat`` method
@@ -91,7 +95,7 @@ This project used to leverage ``ctransformers`` as GGML library for loading GGUF
 
 Will automatically install latest pre-built release
 
-    pip install https://b0-b.github.io/blowtorch-transformer-api/dist/blowtorch-1.3.0-py3-none-any.whl
+    pip install https://b0-b.github.io/blowtorch-transformer-api/dist/blowtorch-1.3.1-py3-none-any.whl
 
 ### Manual Installation
 Clone the repository
@@ -105,7 +109,7 @@ Install the provided wheel distribution via python script
 
 or with ``pip`` package manager
 
-    pip install ./dist/blowtorch-1.3.0-py3-none-any.whl 
+    pip install ./dist/blowtorch-1.3.1-py3-none-any.whl 
 
 Alternatively, if a hardware specific build is needed just build from source using automated script.
 
