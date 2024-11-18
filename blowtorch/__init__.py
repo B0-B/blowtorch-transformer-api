@@ -974,8 +974,15 @@ class client:
 
         self.log('Start benchmark ...', label='⏱️')
 
+        # prepare a message in perfect format in case of vllm
+        # as vllm will otherwise only generate a single new token
+        bench_prompt = 'please write a generic long letter'
+        if self.llm_base_module == 'vllm':
+            bench_prompt = self.__format__(bench_prompt)
+
+        # Perform benchmark
         stopwatch_start = perf_counter_ns()
-        raw_output = self.inference('please write a generic long letter', **kwargs)
+        raw_output = self.inference(bench_prompt, **kwargs)
         stopwatch_stop = perf_counter_ns()
         
 
