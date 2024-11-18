@@ -18,14 +18,14 @@ classifiers = [
 ]
 dependencies = [
   "llama-cpp-python", 
-  "accelerate==0.30.0", 
-  "h5py==3.9.0", 
+  "accelerate>=0.30.0", 
+  "h5py>=3.9.0", 
   "psutil",
   "eager",
   "optimum",
   "auto-gptq==0.7.1",
-  "transformers==4.43.2",
-  "tokenizers==0.19.1"
+  "transformers>=4.43.2",
+  "tokenizers>=0.19.1"
 ]
 
 [project.urls]

@@ -453,7 +453,7 @@ class client:
     def inference (self, input_text: str, **pipe_twargs) -> str:
 
         '''
-        Inference of input through model using the transformer pipeline.
+        Inference of input through model using the selected pipeline.
         '''
         
         if self.llm_base_module == 'vllm':
