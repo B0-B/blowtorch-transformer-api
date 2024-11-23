@@ -20,10 +20,11 @@ from blowtorch import client, webUI
 USERNAME = 'Steve'
 
 # create state-of-the-art chat bot
-myChatClient = client(model_file='Meta-Llama-3-8B-Instruct.Q2_K.gguf', 
-                      hugging_face_path='MaziyarPanahi/Meta-Llama-3-8B-Instruct-GGUF', 
-                      chat_format="llama-3",
-                      device="cpu")
+myChatClient = client('Llama-3.2-3B-Instruct.Q3_K_L.gguf', 
+            'MaziyarPanahi/Llama-3.2-3B-Instruct-GGUF', 
+            name='Hal 9000',
+            device='cpu',
+            chat_format="llama-3")
 
 myChatClient.setConfig(username=USERNAME, max_new_tokens=256, auto_trim=True)
 
@@ -73,7 +74,7 @@ This project used to leverage ``ctransformers`` as GGML library for loading GGUF
 |**library**|**version**|
 |-|-|
 |transformers|4.43.2|
-|llama-cpp-python|latest|
+|llama-cpp-python|>=0.3.2|
 |accelerate|0.30.0|
 |h5py|3.9.0|
 |psutil|latest|

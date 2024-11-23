@@ -17,7 +17,7 @@ classifiers = [
     "Operating System :: OS Independent"
 ]
 dependencies = [
-  "llama-cpp-python", 
+  "llama-cpp-python>=0.3.2", 
   "accelerate>=0.30.0", 
   "h5py>=3.9.0", 
   "psutil",

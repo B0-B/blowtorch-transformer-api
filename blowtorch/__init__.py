@@ -455,7 +455,7 @@ class client:
         '''
         Inference of input through model using the selected pipeline.
         '''
-        
+        # print('PROMPT:', input_text)
         if self.llm_base_module == 'vllm':
             if 'stop' not in pipe_twargs:
                 pipe_twargs['stop'] = ['<|eot_id|>', '</s>']
