@@ -58,7 +58,7 @@ __colors__ = {
 }
 
 # ---- clients ----
-class client:
+class BaseClient:
 
     '''
     A huggingface-compliant AI client for running (large-) language models. 
@@ -1068,6 +1068,14 @@ class client:
 
         return (vram_usage, suffix[ind])
 
+class client ( BaseClient ):
+
+    '''
+    Alias for BaseClient.
+    '''
+
+    def __init__(self, model_file = None, hugging_face_path = None, attention = False, chat_format = 'llama-3', device = 'gpu', device_id = 0, name = None, verbose = True, silent = False, **twargs):
+        super().__init__(model_file, hugging_face_path, attention, chat_format, device, device_id, name, verbose, silent, **twargs)
 
 
 

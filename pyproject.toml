@@ -25,7 +25,8 @@ dependencies = [
   "optimum",
   "auto-gptq==0.7.1",
   "transformers>=4.43.2",
-  "tokenizers>=0.19.1"
+  "tokenizers>=0.19.1",
+  "PyPDF2"
 ]
 
 [project.urls]
