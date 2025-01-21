@@ -465,6 +465,23 @@ class BaseClient:
         else:
             return self.pipe(input_text, **pipe_twargs)[0]['generated_text']
 
+    def batch_inference (self, *input_text: str, **pipe_twargs) -> list[str]:
+
+        '''
+        Batch inference with vLLM.
+        All functionalities are identical to BaseClient.inference.
+        '''
+        
+        if self.llm_base_module == 'vllm':
+            if 'stop' not in pipe_twargs:
+                pipe_twargs['stop'] = ['<|eot_id|>', '</s>']
+            outputs = self.pipe(list(input_text), SamplingParams(**pipe_twargs))      
+            collected_responses = []
+            for output in outputs:
+                collected_responses.append(output.outputs[0].text)
+            return collected_responses
+        raise ValueError('Batch inference is only possible if vLLM is installed.')
+
     def loadModel (self, model_file:str|None=None, hugging_face_path:str|None=None, device:str='gpu', device_id:int=0, **twargs) -> bool:
 
         '''

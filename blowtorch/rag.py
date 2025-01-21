@@ -156,15 +156,40 @@ class DocReader:
     The DocReader uses Doc to analyze and abstract the underlying document.
     '''
 
+    backup_model = "MaziyarPanahi/Llama-3.2-3B-Instruct-GGUF"
+    backup_model_file = "Llama-3.2-3B-Instruct.Q3_K_M.gguf"
+
     def __init__(self, 
                  file: str|PosixPath,
+                 abstraction_map: list[int],
                  blowtorch_client: "client|None"=None) -> None:
         
-        # initialize client
+        # initialize client for all LLM handling
         if not blowtorch_client:
+            print(f'[{self.__class__.__name__}] ⚠️ No client provided, will initilize one from {DocReader.backup_model}.')
             blowtorch_client = client(
-                "Llama-3.2-3B-Instruct.Q3_K_M.gguf",
-                "MaziyarPanahi/Llama-3.2-3B-Instruct-GGUF",
+                DocReader.backup_model_file,
+                DocReader.backup_model,
                 chat_format='llama-3',
                 device='cpu')
         self.client = blowtorch_client
+
+        # The Doc instance holds all paragraphs, relational tree path 
+        # and other document information
+        self.document = Doc(file)
+
+        # Prepared prompting template.
+        self.prompt_template = 'Please abstract the following text in {} sentences but include everything:\n\n{}' 
+
+    def abstract_paragraphs (self, abstraction_map: list[int]) -> None:
+
+        # vLLM allows to parallelize requests by vectorizing
+        if self.client.llm_base_module == 'vllm':
+            for sentence_count in abstraction_map:
+                # vectorize all paragraphs to one input vector
+                _input = []
+                for paragraph in self.document.paragraphs:
+                    prompt_text = self.prompt_template.format(sentence_count, paragraph.paragraph)
+                    formatted_prompt = self.client.__format_prompt__(prompt_text, 'user')
+                    _input.append(formatted_prompt)
+                
