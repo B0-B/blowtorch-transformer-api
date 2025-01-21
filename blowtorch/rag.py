@@ -1,4 +1,5 @@
 from pathlib import PosixPath, Path
+from __init__ import client
 import pdfplumber
 import re
 
@@ -149,5 +150,21 @@ class Doc:
         
         return headings, paragraphs
 
-d = Doc('C:\\Users\\weezl\\Downloads\\Telegram Desktop\\hashcat_amd_cdna_setup_v1.0.pdf')
+class DocReader:
 
+    '''
+    The DocReader uses Doc to analyze and abstract the underlying document.
+    '''
+
+    def __init__(self, 
+                 file: str|PosixPath,
+                 blowtorch_client: "client|None"=None) -> None:
+        
+        # initialize client
+        if not blowtorch_client:
+            blowtorch_client = client(
+                "Llama-3.2-3B-Instruct.Q3_K_M.gguf",
+                "MaziyarPanahi/Llama-3.2-3B-Instruct-GGUF",
+                chat_format='llama-3',
+                device='cpu')
+        self.client = blowtorch_client
