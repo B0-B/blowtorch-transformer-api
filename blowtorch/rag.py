@@ -1,5 +1,5 @@
 from pathlib import PosixPath, Path
-from __init__ import client
+from blowtorch import client
 import pdfplumber
 import re
 
@@ -90,7 +90,7 @@ class Doc:
 
         paragraphs = []
 
-        if doctype.lower() == 'pdf':
+        if 'pdf' in doctype.lower():
 
             with pdfplumber.open(self.file) as pdf: 
 
@@ -164,7 +164,7 @@ class DocReader:
                  abstraction_map: list[int],
                  blowtorch_client: "client|None"=None) -> None:
         
-        # initialize client for all LLM handling
+        # initialize client if not provided
         if not blowtorch_client:
             print(f'[{self.__class__.__name__}] ⚠️ No client provided, will initilize one from {DocReader.backup_model}.')
             blowtorch_client = client(
@@ -174,22 +174,85 @@ class DocReader:
                 device='cpu')
         self.client = blowtorch_client
 
+        # client inference kwargs
+        self.output_length = 512
+        self.input_length = 2000
+        self.temperature = 1.05
+
         # The Doc instance holds all paragraphs, relational tree path 
         # and other document information
         self.document = Doc(file)
 
         # Prepared prompting template.
-        self.prompt_template = 'Please abstract the following text in {} sentences but include everything:\n\n{}' 
+        self.system_prompt = 'You evaluate, comprehend and summarize paragraphs of a document or paper. The paragraphs can be text, or data.'
+        self.prompt_template = 'Abstract the following text in {} sentences but include everything:\n\n{}' 
 
-    def abstract_paragraphs (self, abstraction_map: list[int]) -> None:
+        # abstract all paragraphs using the abstraction map
+        self.abstraction_map = abstraction_map
+        self.abstract_paragraphs(abstraction_map)
 
-        # vLLM allows to parallelize requests by vectorizing
-        if self.client.llm_base_module == 'vllm':
-            for sentence_count in abstraction_map:
+        # init context
+        self.context_id = 0
+        self.client.newConversation(self.context_id, 'user', scenario='You are a helpful analyst and assistant which studies texts from papers and documents to explain it to the user for easier comprehension.')
+
+    def abstract_paragraphs (self, abstraction_map: list[int], **pipe_twargs) -> None:
+
+        '''
+        Abstracts all paragraphs to the size defined in abstraction map.
+        The abstraction map defines in how many sentences the paragraph (full text)
+        should be summarized (or abstracted). 
+
+        [Parameter]
+        
+        abstraction_map :           List of integer numbers e.g. [8,4,2] summarizes
+                                    each paragraph in 8, 4 and 2 sentences.
+        '''
+
+        # clarify twargs by merging with config (if enabled)
+        if self.client.config:
+
+            # override pipe twargs with left twargs in config
+            pipe_twargs.update(self.client.config)
+
+        for sentence_count in abstraction_map:
+
+            # vLLM allows to parallelize requests by vectorizing
+            if self.client.llm_base_module == 'vllm':
+
                 # vectorize all paragraphs to one input vector
-                _input = []
+                _inputs = []
                 for paragraph in self.document.paragraphs:
                     prompt_text = self.prompt_template.format(sentence_count, paragraph.paragraph)
-                    formatted_prompt = self.client.__format_prompt__(prompt_text, 'user')
-                    _input.append(formatted_prompt)
-                
+                    formatted_prompt = self.client.__format_prompt__(prompt_text, 'user', system_prompt=self.system_prompt)
+                    _inputs.append(formatted_prompt)
+
+                # batched forward propagation
+                _outputs = self.client.batch_inference(*_inputs, **pipe_twargs)
+
+                # sort in answers into paragraph objects 
+                for i in range(len(_outputs)):
+                    
+                    answer = _outputs[i]
+                    paragraph = self.document.paragraphs[i]
+
+                    paragraph.abstraction.append(answer)
+            
+            # Otherwise compute all paragraphs sequentially.
+            else:
+
+                # Iterate sequentially over the documents paragraphs
+                for paragraph in self.document.paragraphs:
+
+                    prompt_text = self.prompt_template.format(sentence_count, paragraph.paragraph)
+                    formatted_prompt = self.client.__format_prompt__(prompt_text, 'user', system_prompt=self.system_prompt)
+
+                    answer = self.client.inference(formatted_prompt, **pipe_twargs)
+                    paragraph.abstraction.append(answer)
+    
+    def summary (self) -> str:
+
+        depth = 0
+        merged_abstractions = '\n'.join([paragraph.abstraction[depth] for paragraph in self.document.paragraphs])
+        prompt = f'The following are sequentially merged summaries of all paragraphs of a paper, please comprehend and summarize it fluently:\n\n{merged_abstractions}'
+
+        return self.client.contextInference(prompt, sessionId=self.context_id, auto_trim=True, max_new_tokens=self.output_length, temperature=self.temperature)

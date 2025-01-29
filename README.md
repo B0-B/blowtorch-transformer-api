@@ -60,10 +60,13 @@ webUI(myChatClient)
 - Automated model handling, chat and context tracking between multiple converstations.
 
 ## Base Requirements   
-- Python >=3.10.12
-- A system with a CPU (preferably Ryzen) and `>=16GB` RAM
 - Assumes drivers were correctly installed and GPU is detectable via rocm-smi, nvidia-smi etc.
-- A solid GPT chat requires `>=6GB` of RAM/vRAM depending on device.
+- Python >=3.10.12
+- Pytorch (latest)
+- vLLM (optional)
+- For CPU inference: a CPU (preferably Ryzen) and `>=16GB` RAM
+
+A solid GPT chat requires `>=6GB` of RAM/vRAM depending on device.
 
 ## Dependency for performant CPU inference [Default]
 
